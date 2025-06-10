@@ -64,3 +64,8 @@ class Model_proovedores(Conexion):
         cursor.close()
         return resultado 
     
+
+
+proovedor = Model_proovedores()
+resultado = proovedor.Insert('0001','Super Electricos', '02763472846', 'La concordia')
+print(resultado)
