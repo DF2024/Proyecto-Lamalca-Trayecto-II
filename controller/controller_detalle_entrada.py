@@ -1,4 +1,12 @@
-from model import Modelo_detalle_entrada
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from model.model_detalle_entrada import Modelo_detalle_entrada
+
+
+
+
 
 class Controlador_detalle_entrada:
     def __init__(self):

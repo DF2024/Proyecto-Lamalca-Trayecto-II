@@ -1,4 +1,9 @@
-from model import Modelo_entrada_inventario
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from model.model_entrada_inventario import Modelo_entrada_inventario
+
 
 class Controlador_entrada_inventario:
     def __init__(self):

@@ -1,4 +1,7 @@
-from model import Modelo_compra
+import os 
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from model.model_compra import Modelo_compra
 
 class Controlador_compra:
     def __init__(self):

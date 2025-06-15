@@ -1,4 +1,8 @@
-from model import Modelo_categoria
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from model.model_categoria import Modelo_categoria
 
 class Controlador_categoria:
     def __init__(self):

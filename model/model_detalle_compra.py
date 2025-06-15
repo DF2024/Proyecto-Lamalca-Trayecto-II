@@ -31,6 +31,14 @@ class Modelo_detalle_compra(Conexion):
         info = cursor.fetchall()
         cursor.close()
         return info
+    
+    def Select_all(self):
+        cursor = self.con.cursor()
+        sql = "SELECT * FROM detalle_compra"
+        cursor.execute(sql)
+        resultados = cursor.fetchall()
+        cursor.close()
+        return resultados
 
     def Delete_all_by_compra(self, id_compra):
         cursor = self.con.cursor()

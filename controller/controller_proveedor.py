@@ -1,4 +1,8 @@
-from model import Modelo_proveedor
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from model.model_proovedor import Modelo_proveedor
 
 class Controlador_proveedor:
     def __init__(self):

@@ -1,4 +1,8 @@
-from model import Modelo_cliente
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from model.model_cliente import Modelo_cliente
 
 class Controlador_cliente:
     def __init__(self):
