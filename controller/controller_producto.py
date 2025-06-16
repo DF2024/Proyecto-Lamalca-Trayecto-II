@@ -9,7 +9,7 @@ class Controlador_producto:
     def __init__(self):
         self.modelo = Modelo_producto()
 
-    def crear_producto(self, id_producto, nombre, descripcion, precio, stock, id_categoria, id_proveedor):
+    def insertar_producto(self, id_producto, nombre, descripcion, precio, stock, id_categoria, id_proveedor):
         return self.modelo.Insert(id_producto, nombre, descripcion, precio, stock, id_categoria, id_proveedor)
 
     def obtener_producto(self, id_producto):

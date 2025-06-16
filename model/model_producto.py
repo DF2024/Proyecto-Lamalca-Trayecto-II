@@ -9,14 +9,14 @@ class Modelo_producto(Conexion):
         super().__init__()
         self.con = self.get_conexion()
 
-    def Insert(self, id_producto, nombre, descripcion, precio, stock, id_categoria, id_proveedor):
+    def Insert(self, id_producto, nombre, descripcion, precio_venta, stock, id_categoria, id_proveedor):
         try:
             cursor = self.con.cursor()
             sql = '''
-                INSERT INTO productos (id_producto, nombre, descripcion, precio, stock, id_categoria, id_proveedor)
+                INSERT INTO productos (id_producto, nombre, descripcion, precio_venta, stock, id_categoria, id_proveedor)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
             '''
-            cursor.execute(sql, (id_producto, nombre, descripcion, precio, stock, id_categoria, id_proveedor))
+            cursor.execute(sql, (id_producto, nombre, descripcion, precio_venta, stock, id_categoria, id_proveedor))
             self.con.commit()
             resultado = cursor.rowcount
             cursor.close()

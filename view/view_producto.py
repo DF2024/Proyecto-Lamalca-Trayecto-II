@@ -27,12 +27,14 @@ class ProductoView(tk.Toplevel):
 
         self.e_id = tk.Entry(frame)
         self.e_nombre = tk.Entry(frame)
+        self.e_descripcion = tk.Entry(frame)
         self.e_precio = tk.Entry(frame)
         self.e_stock = tk.Entry(frame)
-        self.e_id_seccion = tk.Entry(frame)
+        self.e_id_categoria = tk.Entry(frame)
+        self.e_id_proveedor = tk.Entry(frame)
 
-        etiquetas = ["ID", "Nombre", "Precio", "Stock", "ID Sección"]
-        entradas = [self.e_id, self.e_nombre, self.e_precio, self.e_stock, self.e_id_seccion]
+        etiquetas = ["ID", "Nombre", "Descripción" ,"Precio", "Stock", "ID Categoria", "Proovedor"]
+        entradas = [self.e_id, self.e_nombre, self.e_descripcion, self.e_precio, self.e_stock, self.e_id_categoria, self.e_id_proveedor]
 
         for i, label in enumerate(etiquetas):
             tk.Label(frame, text=label).grid(row=i, column=0, sticky="e")
@@ -46,19 +48,21 @@ class ProductoView(tk.Toplevel):
             productos = self.controlador.obtener_todos_los_productos()
             if productos:
                 for p in productos:
-                    self.lista.insert(tk.END, f"ID: {p[0]} | Nombre: {p[1]} | Precio: {p[2]} | Stock: {p[3]} | Sección ID: {p[4]}")
+                    self.lista.insert(tk.END, f"ID: {p[0]} | Nombre: {p[1]} | Descripción: {p[2]} | Precio: {p[3]} | Stock: {p[4]} | Categoria ID: {p[5]} | Proveedor: {p[5]}")
         except Exception as e:
             messagebox.showerror("Error", f"Error al cargar los productos: {e}")
 
     def _agregar_producto(self):
         id_p = self.e_id.get()
         nombre = self.e_nombre.get()
-        precio = self.e_precio.get()
+        descripcion = self.e_descripcion.get()
+        precio_venta = self.e_precio.get()
         stock = self.e_stock.get()
-        id_seccion = self.e_id_seccion.get()
+        id_categoria = self.e_id_categoria.get()
+        id_proveedor = self.e_id_proveedor.get()
 
-        if id_p and nombre and precio and stock and id_seccion:
-            resultado = self.controlador.insertar_producto(id_p, nombre, precio, stock, id_seccion)
+        if id_p and nombre and precio_venta and stock and id_categoria and id_proveedor:
+            resultado = self.controlador.insertar_producto(id_p, nombre, descripcion, precio_venta, stock, id_categoria, id_proveedor)
             if resultado == 1:
                 messagebox.showinfo("Éxito", "Producto agregado exitosamente")
                 self._cargar_productos()

@@ -11,7 +11,7 @@ class Controlador_detalle_compra:
     def __init__(self):
         self.modelo = Modelo_detalle_compra()
 
-    def crear_detalle_compra(self, id_detalle, id_compra, id_producto, cantidad, precio_unitario):
+    def insertar_detalle(self, id_detalle, id_compra, id_producto, cantidad, precio_unitario):
         return self.modelo.Insert(id_detalle, id_compra, id_producto, cantidad, precio_unitario)
 
     def obtener_detalle_compra(self, id_detalle):

@@ -10,14 +10,14 @@ class Modelo_compra(Conexion):
         super().__init__()
         self.con = self.get_conexion()
 
-    def Insert(self, id_compra, fecha, total, id_cliente):
+    def Insert(self, id_compra,id_cliente, fecha, total):
         try:
             cursor = self.con.cursor()
             sql = '''
-                INSERT INTO compras (id_compra, fecha, total, id_cliente)
+                INSERT INTO compras (id_compra, id_cliente, fecha, total)
                 VALUES (%s, %s, %s, %s)
             '''
-            cursor.execute(sql, (id_compra, fecha, total, id_cliente))
+            cursor.execute(sql, (id_compra, id_cliente, fecha, total))
             self.con.commit()
             resultado = cursor.rowcount
             cursor.close()
@@ -45,7 +45,7 @@ class Modelo_compra(Conexion):
         cursor = self.con.cursor()
         sql = '''
             UPDATE compras
-            SET fecha = %s, total = %s, id_cliente = %s
+            SET id_cliente = %s, fecha = %s, total = %s
             WHERE id_compra = %s
         '''
         cursor.execute(sql, (fecha, total, id_cliente, id_compra))

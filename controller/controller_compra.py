@@ -7,7 +7,7 @@ class Controlador_compra:
     def __init__(self):
         self.modelo = Modelo_compra()
 
-    def crear_compra(self, id_compra, id_cliente, fecha, total):
+    def insertar_compra(self, id_compra, id_cliente, fecha, total):
         return self.modelo.Insert(id_compra, id_cliente, fecha, total)
 
     def obtener_compra(self, id_compra):

@@ -8,7 +8,7 @@ class Controlador_cliente:
     def __init__(self):
         self.modelo = Modelo_cliente()
 
-    def crear_cliente(self, id_cliente, nombre, apellido, cedula, telefono, direccion):
+    def insertar_cliente(self, id_cliente, nombre, apellido, cedula, telefono, direccion):
         return self.modelo.Insert(id_cliente, nombre, apellido, cedula, telefono, direccion)
 
     def obtener_cliente(self, id_cliente):

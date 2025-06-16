@@ -9,14 +9,14 @@ class Modelo_proveedor(Conexion):
         super().__init__()
         self.con = self.get_conexion()
 
-    def Insert(self, id_proveedor, nombre, telefono, correo, direccion):
+    def Insert(self, id_proveedor, nombre, telefono, direccion):
         try:
             cursor = self.con.cursor()
             sql = '''
-                INSERT INTO proveedores (id_proveedor, nombre, telefono, correo, direccion)
+                INSERT INTO proveedores (id_proveedor, nombre, telefono,  direccion)
                 VALUES (%s, %s, %s, %s, %s)
             '''
-            cursor.execute(sql, (id_proveedor, nombre, telefono, correo, direccion))
+            cursor.execute(sql, (id_proveedor, nombre, telefono, direccion))
             self.con.commit()
             resultado = cursor.rowcount
             cursor.close()
@@ -40,14 +40,14 @@ class Modelo_proveedor(Conexion):
         cursor.close()
         return info
 
-    def Update(self, id_proveedor, nombre, telefono, correo, direccion):
+    def Update(self, id_proveedor, nombre, telefono, direccion):
         cursor = self.con.cursor()
         sql = '''
             UPDATE proveedores
             SET nombre = %s, telefono = %s, correo = %s, direccion = %s
             WHERE id_proveedor = %s
         '''
-        cursor.execute(sql, (nombre, telefono, correo, direccion, id_proveedor))
+        cursor.execute(sql, (nombre, telefono,  direccion, id_proveedor))
         self.con.commit()
         resultado = cursor.rowcount
         cursor.close()

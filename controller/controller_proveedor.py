@@ -8,8 +8,8 @@ class Controlador_proveedor:
     def __init__(self):
         self.modelo = Modelo_proveedor()
 
-    def crear_proveedor(self, id_proveedor, nombre, telefono, correo, direccion):
-        return self.modelo.Insert(id_proveedor, nombre, telefono, correo, direccion)
+    def insertar_proveedor(self, id_proveedor, nombre, telefono, direccion):
+        return self.modelo.Insert(id_proveedor, nombre, telefono, direccion)
 
     def obtener_proveedor(self, id_proveedor):
         return self.modelo.Select(id_proveedor)
