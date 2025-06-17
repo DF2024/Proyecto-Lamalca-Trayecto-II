@@ -25,13 +25,14 @@ class CompraView(tk.Toplevel):
         frame = tk.Frame(self)
         frame.pack(pady=10)
 
-        self.e_id = tk.Entry(frame)
         self.e_id_cliente = tk.Entry(frame)
+        self.e_id_producto = tk.Entry(frame)
+        self.e_cantidad = tk.Entry(frame)
         self.e_fecha = tk.Entry(frame)
         self.e_total = tk.Entry(frame)
 
-        etiquetas = ["ID Compra", "ID Cliente", "Fecha (YYYY-MM-DD)", "Total"]
-        entradas = [self.e_id, self.e_id_cliente, self.e_fecha, self.e_total]
+        etiquetas = ["ID Cliente","ID producto", "Cantidad", "Fecha (YYYY-MM-DD)", "Total"]
+        entradas = [self.e_id_cliente, self.e_id_producto, self.e_cantidad, self.e_fecha, self.e_total]
 
         for i, label in enumerate(etiquetas):
             tk.Label(frame, text=label).grid(row=i, column=0, sticky="e")
@@ -45,25 +46,28 @@ class CompraView(tk.Toplevel):
             compras = self.controlador.obtener_todas_las_compras()
             if compras:
                 for c in compras:
-                    self.lista.insert(tk.END, f"ID: {c[0]} | Cliente: {c[1]} | Fecha: {c[2]} | Total: {c[3]}")
+                    self.lista.insert(tk.END, f" Cliente: {c[1]} | Producto: {c[2]} | Cantidad: {c[3]} | Fecha: {c[4]} | Total: {c[5]}")
         except Exception as e:
             messagebox.showerror("Error", f"Error al cargar las compras: {e}")
 
     def _registrar_compra(self):
-        id_compra = self.e_id.get()
         id_cliente = self.e_id_cliente.get()
+        id_producto = self.e_id_producto.get()
+        cantidad = self.e_cantidad.get()
         fecha = self.e_fecha.get()
         total = self.e_total.get()
 
-        if id_compra and id_cliente and fecha and total:
-            resultado = self.controlador.insertar_compra(id_compra, id_cliente, fecha, total)
+        if id_cliente and id_producto and cantidad and fecha and total:
+            resultado = self.controlador.insertar_compra(id_cliente, id_producto, cantidad, fecha, total)
             if resultado == 1:
                 messagebox.showinfo("Éxito", "Compra registrada exitosamente")
                 self._cargar_compras()
+            
             else:
                 messagebox.showerror("Error", f"No se pudo registrar la compra. Detalles: {resultado}")
         else:
             messagebox.showwarning("Campos requeridos", "Todos los campos son obligatorios")
+
 
 if __name__ == "__main__":
     root = tk.Tk()

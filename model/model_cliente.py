@@ -6,14 +6,14 @@ class Modelo_cliente(Conexion):
         super().__init__()
         self.con = self.get_conexion()
 
-    def Insert(self, id_cliente, nombre, apellido, cedula, telefono, direccion):
+    def Insert(self, nombre, apellido, cedula, telefono, direccion):
         try:
             cursor = self.con.cursor()
             sql = '''
-                INSERT INTO clientes (id_cliente, nombre, apellido, cedula, telefono, direccion)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                INSERT INTO clientes ( nombre, apellido, cedula, telefono, direccion)
+                VALUES ( %s, %s, %s, %s, %s)
             '''
-            cursor.execute(sql, (id_cliente, nombre, apellido, cedula, telefono, direccion))
+            cursor.execute(sql, ( nombre, apellido, cedula, telefono, direccion))
             self.con.commit()
             resultado = cursor.rowcount
             cursor.close()
@@ -37,14 +37,14 @@ class Modelo_cliente(Conexion):
         cursor.close()
         return info
 
-    def Update(self, id_cliente, nombre, apellido, cedula, telefono, direccion):
+    def Update(self, nombre, apellido, cedula, telefono, direccion):
         cursor = self.con.cursor()
         sql = '''
             UPDATE clientes
             SET nombre = %s, apellido = %s, cedula = %s, telefono = %s, direccion = %s
             WHERE id_cliente = %s
         '''
-        cursor.execute(sql, (nombre, apellido, cedula, telefono, direccion, id_cliente))
+        cursor.execute(sql, (nombre, apellido, cedula, telefono, direccion))
         self.con.commit()
         resultado = cursor.rowcount
         cursor.close()

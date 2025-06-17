@@ -25,15 +25,14 @@ class ClienteView(tk.Toplevel):
         frame = tk.Frame(self)
         frame.pack(pady=10)
 
-        self.e_id = tk.Entry(frame)
         self.e_nombre = tk.Entry(frame)
         self.e_apellido = tk.Entry(frame)
         self.e_cedula = tk.Entry(frame)
         self.e_telefono = tk.Entry(frame)
         self.e_direccion = tk.Entry(frame)
 
-        etiquetas = ["ID", "Nombre", "Apellido", "Cédula", "Teléfono", "Dirección"]
-        entradas = [self.e_id, self.e_nombre, self.e_apellido, self.e_cedula, self.e_telefono, self.e_direccion]
+        etiquetas = ["Nombre", "Apellido", "Cédula", "Teléfono", "Dirección"]
+        entradas = [self.e_nombre, self.e_apellido, self.e_cedula, self.e_telefono, self.e_direccion]
 
         for i, label in enumerate(etiquetas):
             tk.Label(frame, text=label).grid(row=i, column=0, sticky="e")
@@ -47,20 +46,19 @@ class ClienteView(tk.Toplevel):
             clientes = self.controlador.obtener_todos_los_clientes()
             if clientes:
                 for c in clientes:
-                    self.lista.insert(tk.END, f"ID: {c[0]} | Nombre: {c[1]} {c[2]} | Cédula: {c[3]} | Tel: {c[4]} | Dirección: {c[5]}")
+                    self.lista.insert(tk.END, f"Nombre: {c[1]} {c[2]} | Cédula: {c[3]} | Tel: {c[4]} | Dirección: {c[5]}")
         except Exception as e:
             messagebox.showerror("Error", f"Error al cargar los clientes: {e}")
 
     def _agregar_cliente(self):
-        id_c = self.e_id.get()
         nombre = self.e_nombre.get()
         apellido = self.e_apellido.get()
         cedula = self.e_cedula.get()
         telefono = self.e_telefono.get()
         direccion = self.e_direccion.get()
 
-        if id_c and nombre and apellido:
-            resultado = self.controlador.insertar_cliente(id_c, nombre, apellido, cedula, telefono, direccion)
+        if nombre and apellido:
+            resultado = self.controlador.insertar_cliente(nombre, apellido, cedula, telefono, direccion)
             if resultado == 1:
                 messagebox.showinfo("Éxito", "Cliente agregado exitosamente")
                 self._cargar_clientes()
