@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter import messagebox
 from view.view_clientes import ClienteView
 from view.view_compra import CompraView
-from view.view_detalle_compra import DetalleCompraView
 from view.view_producto import ProductoView
 
 # Simulaciones de vistas (reemplaza por tus clases reales)
@@ -17,7 +16,6 @@ class EmpleadoDashboard(tk.Tk):
         botones = [
             ("Clientes", self.abrir_cliente),
             ("Compras", self.abrir_compra),
-            ("Detalle Compra", self.abrir_detalle_compra),
             ("Productos", self.abrir_producto),
         ]
 
@@ -29,9 +27,6 @@ class EmpleadoDashboard(tk.Tk):
 
     def abrir_compra(self):
         CompraView(self)
-
-    def abrir_detalle_compra(self):
-        DetalleCompraView(self)
 
     def abrir_producto(self):
         ProductoView(self)

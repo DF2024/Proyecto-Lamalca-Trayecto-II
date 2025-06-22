@@ -1,64 +1,84 @@
 import os
 import sys
+# Asegura que se pueda encontrar la clase de conexión en el directorio raíz
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from conexion import Conexion
 from mysql.connector import Error
 
-
 class Modelo_categoria(Conexion):
     def __init__(self):
         super().__init__()
+        # self.con ahora almacena el objeto de conexión
         self.con = self.get_conexion()
+        # self.cursor se puede inicializar aquí para reutilizarlo o dentro de cada método
+        self.cursor = self.con.cursor()
 
-    def Insert(self, id_categoria, nombre):
+    def Insert(self, nombre):
+        """
+        Inserta una nueva categoría.
+        Retorna el número de filas afectadas (1 si fue exitoso, 0 si no).
+        """
         try:
-            cursor = self.con.cursor()
+            # CORRECCIÓN: La consulta SQL solo debe tener un marcador de posición %s para el campo 'nombre'.
             sql = '''
-                INSERT INTO categorias (id_categoria, nombre)
-                VALUES (%s, %s)
+                INSERT INTO categorias (nombre)
+                VALUES (%s) 
             '''
-            cursor.execute(sql, (id_categoria, nombre))
+            # El valor se pasa como una tupla, incluso si es solo un elemento.
+            self.cursor.execute(sql, (nombre,))
             self.con.commit()
-            resultado = cursor.rowcount
-            cursor.close()
-            return resultado
+            # Retornamos el número de filas insertadas.
+            return self.cursor.rowcount
         except Error as e:
-            return f"Error: {e}"
-
-    def Select(self, id_categoria):
-        cursor = self.con.cursor()
-        sql = "SELECT * FROM categorias WHERE id_categoria = %s"
-        cursor.execute(sql, (id_categoria,))
-        info = cursor.fetchone()
-        cursor.close()
-        return info
+            print(f"Error al insertar categoría: {e}")
+            # En caso de error, retornamos 0 para indicar que no se insertó nada.
+            return 0
 
     def Select_all(self):
-        cursor = self.con.cursor()
-        sql = "SELECT * FROM categorias"
-        cursor.execute(sql)
-        info = cursor.fetchall()
-        cursor.close()
-        return info
+        """
+        Selecciona todas las categorías.
+        Retorna una lista de tuplas con los datos.
+        """
+        try:
+            self.cursor.execute("SELECT id_categoria, nombre FROM categorias ORDER BY nombre")
+            # CORRECIÓN: Es importante usar el nombre de columna real de tu tabla (ej. id_categoria)
+            info = self.cursor.fetchall()
+            return info
+        except Error as e:
+            print(f"Error al seleccionar todas las categorías: {e}")
+            return [] # Retornar una lista vacía en caso de error es una buena práctica.
 
     def Update(self, id_categoria, nombre):
-        cursor = self.con.cursor()
-        sql = '''
-            UPDATE categorias
-            SET nombre = %s
-            WHERE id_categoria = %s
-        '''
-        cursor.execute(sql, (nombre, id_categoria))
-        self.con.commit()
-        resultado = cursor.rowcount
-        cursor.close()
-        return resultado
+        """
+        Actualiza una categoría existente.
+        Retorna el número de filas afectadas.
+        """
+        try:
+            sql = '''
+                UPDATE categorias
+                SET nombre = %s
+                WHERE id_categoria = %s
+            '''
+            self.cursor.execute(sql, (nombre, id_categoria))
+            self.con.commit()
+            return self.cursor.rowcount
+        except Error as e:
+            print(f"Error al actualizar categoría: {e}")
+            return 0
 
     def Delete(self, id_categoria):
-        cursor = self.con.cursor()
-        sql = "DELETE FROM categorias WHERE id_categoria = %s"
-        cursor.execute(sql, (id_categoria,))
-        self.con.commit()
-        resultado = cursor.rowcount
-        cursor.close()
-        return resultado
+        """
+        Elimina una categoría por su ID.
+        Retorna el número de filas afectadas.
+        """
+        try:
+            sql = "DELETE FROM categorias WHERE id_categoria = %s"
+            self.cursor.execute(sql, (id_categoria,))
+            self.con.commit()
+            return self.cursor.rowcount
+        except Error as e:
+            print(f"Error al eliminar categoría: {e}")
+            # Este error puede ocurrir si la categoría es una clave foránea en otra tabla.
+            return 0
+
+

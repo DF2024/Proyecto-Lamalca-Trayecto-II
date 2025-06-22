@@ -2,8 +2,6 @@ import tkinter as tk
 from tkinter import messagebox
 from view.view_proveedor import ProveedorView
 from view.view_producto import ProductoView
-from view.view_entrada_inventario import EntradaInventarioView
-from view.view_detalle_entrada import DetalleEntradaView
 from view.view_categoria import CategoriaView
 
 
@@ -17,8 +15,6 @@ class AdminDashboard(tk.Tk):
         botones = [
             ("Proveedores", self.abrir_proveedor),
             ("Productos", self.abrir_producto),
-            ("Entradas", self.abrir_entrada),
-            ("Detalle Entrada", self.abrir_detalle_entrada),
             ("Categorías", self.abrir_categoria),
         ]
 
@@ -30,12 +26,6 @@ class AdminDashboard(tk.Tk):
 
     def abrir_producto(self):
         ProductoView(self)
-
-    def abrir_entrada(self):
-        EntradaInventarioView(self)
-
-    def abrir_detalle_entrada(self):
-        DetalleEntradaView(self)
 
     def abrir_categoria(self):
         CategoriaView(self)
