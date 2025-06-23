@@ -1,46 +1,79 @@
+# login.py
 import tkinter as tk
-from tkinter import messagebox
-from view.admin_dashboard import AdminDashboard
-from view.empleado_dashboard import EmpleadoDashboard
+from tkinter import messagebox, ttk
+import view.admin_dashboard as admin # Importamos el dashboard del admin
+import view.empleado_dashboard as emple# Importamos el dashboard del empleado
 
-# Usuarios simulados (en una app real, esto vendría de la base de datos)
-USUARIOS = {
-    'admin': {'password': 'admin123', 'rol': 'admin'},
-    'empleado': {'password': 'empleado123', 'rol': 'empleado'}
-}
-
-class LoginView(tk.Tk):
+class LoginWindow(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Login - Sistema Ferretería")
-        self.geometry("350x200")
-        self._construir_interfaz()
+        self.title("Inicio de Sesión - Sistema La Malca")
+        self.geometry("350x220")
+        self.resizable(False, False)
+        self.eval('tk::PlaceWindow . center') # Centra la ventana
 
-    def _construir_interfaz(self):
-        tk.Label(self, text="Usuario").pack(pady=5)
-        self.usuario_entry = tk.Entry(self)
-        self.usuario_entry.pack(pady=5)
+        main_frame = ttk.Frame(self, padding="20")
+        main_frame.pack(expand=True, fill="both")
 
-        tk.Label(self, text="Contraseña").pack(pady=5)
-        self.contra_entry = tk.Entry(self, show="*")
-        self.contra_entry.pack(pady=5)
+        ttk.Label(main_frame, text="Usuario:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        self.user_entry = ttk.Entry(main_frame)
+        self.user_entry.grid(row=0, column=1, padx=5, pady=5)
 
-        tk.Button(self, text="Iniciar sesión", command=self._login).pack(pady=10)
+        ttk.Label(main_frame, text="Contraseña:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        self.pass_entry = ttk.Entry(main_frame, show="*")
+        self.pass_entry.grid(row=1, column=1, padx=5, pady=5)
+        
+        self.pass_entry.bind("<Return>", self.login)
+        self.user_entry.focus() # Pone el cursor en el campo de usuario al iniciar
 
-    def _login(self):
-        usuario = self.usuario_entry.get()
-        clave = self.contra_entry.get()
+        login_button = ttk.Button(main_frame, text="Iniciar Sesión", command=self.login)
+        login_button.grid(row=2, column=0, columnspan=2, pady=15)
 
-        if usuario in USUARIOS and USUARIOS[usuario]['password'] == clave:
-            self.destroy()  # Cierra la ventana de login
-            rol = USUARIOS[usuario]['rol']
-            if rol == 'admin':
-                AdminDashboard().mainloop()
-            elif rol == 'empleado':
-                EmpleadoDashboard().mainloop()
+    # En login.py
+
+# ... (resto del código de la clase LoginWindow) ...
+
+    def login(self, event=None):
+        usuario = self.user_entry.get().strip()
+        password = self.pass_entry.get().strip()
+
+        # Base de datos de usuarios (simulada)
+        usuarios = {
+            "admin": {"password": "123", "rol": "admin"},
+            "empleado": {"password": "456", "rol": "empleado"}
+        }
+
+        # 1. Validar si el usuario existe y la contraseña es correcta
+        if usuario in usuarios and usuarios[usuario]["password"] == password:
+            rol = usuarios[usuario]["rol"]
+            
+            # 2. Ocultar la ventana de login
+            self.withdraw()
+            
+            # 3. Decidir qué dashboard abrir basado en el rol
+            if rol == "admin":
+                # Se crea Y se maneja el cierre en el mismo bloque
+                dashboard = admin.AdminDashboard(master=self)
+                dashboard.protocol("WM_DELETE_WINDOW", self.on_dashboard_close)
+            elif rol == "empleado":
+                # Se crea Y se maneja el cierre en el mismo bloque
+                dashboard = emple.EmpleadoDashboard(master=self)
+                dashboard.protocol("WM_DELETE_WINDOW", self.on_dashboard_close)
+            else:
+                # Este 'else' ahora SÍ tiene sentido: el rol existe en el diccionario pero no hay un dashboard para él.
+                messagebox.showerror("Error de Configuración", f"El rol '{rol}' es válido pero no tiene un dashboard asignado.")
+                self.deiconify() # Vuelve a mostrar el login
+
         else:
-            messagebox.showerror("Error", "Usuario o contraseña incorrectos")
+            # Si el usuario o la contraseña son incorrectos
+            messagebox.showerror("Error de Autenticación", "Usuario o contraseña incorrectos.")
+            self.pass_entry.delete(0, 'end')
+            self.pass_entry.focus()
 
-if __name__ == '__main__':
-    app = LoginView()
+    def on_dashboard_close(self):
+        """Finaliza toda la aplicación si se cierra un dashboard con la 'X'."""
+        self.destroy()
+
+if __name__ == "__main__":
+    app = LoginWindow()
     app.mainloop()
