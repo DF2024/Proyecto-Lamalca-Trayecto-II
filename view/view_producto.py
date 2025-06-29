@@ -90,11 +90,11 @@ class ProductoView(tk.Toplevel):
 
         botones_frame = tk.Frame(main_frame)
         botones_frame.pack(pady=10)
-        tk.Button(botones_frame, text="Agregar", command=self._agregar_producto).grid(row=0, column=0, padx=10)
-        tk.Button(botones_frame, text="Actualizar", command=self._actualizar_producto).grid(row=0, column=1, padx=10)
-        tk.Button(botones_frame, text="Eliminar", command=self._eliminar_producto).grid(row=0, column=2, padx=10)
-        tk.Button(botones_frame, text="Limpiar", command=self._limpiar_entradas).grid(row=0, column=3, padx=10)
-
+        ttk.Button(botones_frame, text="Agregar", command=self._agregar_producto).grid(row=0, column=0, padx=10)
+        ttk.Button(botones_frame, text="Actualizar", command=self._actualizar_producto).grid(row=0, column=1, padx=10)
+        ttk.Button(botones_frame, text="Eliminar", command=self._eliminar_producto).grid(row=0, column=2, padx=10)
+        ttk.Button(botones_frame, text="Limpiar", command=self._limpiar_entradas).grid(row=0, column=3, padx=10)
+        ttk.Button(botones_frame, text="Menú", command=self.volver_al_dashboard).grid(row=0, column=4, padx=10)
 
     def _cargar_comboboxes(self):
         try:
@@ -235,8 +235,13 @@ class ProductoView(tk.Toplevel):
                 self._limpiar_entradas()
             else:
                 messagebox.showerror("Error", "No se pudo eliminar el producto.")
+    
 
-# ... (El bloque if __name__ == "__main__": se mantiene igual para pruebas) ...
+    def volver_al_dashboard(self):
+        self.destroy()
+        if self.master:
+            self.master.deiconify()
+
 
 # Bloque para probar la ventana de forma independiente
 if __name__ == "__main__":

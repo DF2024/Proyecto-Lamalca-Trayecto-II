@@ -70,6 +70,9 @@ class ProveedorView(tk.Toplevel):
         ttk.Button(botones_frame, text="Buscar por RIF", command=self._buscar_proveedor).grid(row=0, column=2, padx=10, ipady=4)
         ttk.Button(botones_frame, text="Eliminar", command=self._eliminar_proveedor).grid(row=0, column=3, padx=10, ipady=4)
         ttk.Button(botones_frame, text="Limpiar", command=self._limpiar_entradas).grid(row=0, column=4, padx=10, ipady=4)
+        ttk.Button(botones_frame, text="Menú", command=self.volver_al_dashboard).grid(row=0, column=5, padx=10, ipady=4)
+
+
 
     def _cargar_proveedores(self):
         for i in self.tabla.get_children():
@@ -181,6 +184,12 @@ class ProveedorView(tk.Toplevel):
                 self._limpiar_entradas()
             else:
                 messagebox.showerror("Error", "No se pudo eliminar el proveedor. Es posible que esté asociado a un producto.")
+
+    def volver_al_dashboard(self):
+        self.destroy()
+        if self.master:
+            self.master.deiconify()
+
 
 if __name__ == "__main__":
     root = tk.Tk()

@@ -20,9 +20,13 @@ class ClienteView(tk.Toplevel):
         self._construir_interfaz()
         self._cargar_clientes()
 
+
+    
     def _construir_interfaz(self):
         main_frame = tk.Frame(self)
         main_frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+
+
 
         # --- Tabla de Clientes ---
         frame_tabla = ttk.LabelFrame(main_frame, text="Listado de Clientes")
@@ -48,23 +52,23 @@ class ClienteView(tk.Toplevel):
 
         # Usamos ttk para un look más moderno y consistente
         tk.Label(frame_form, text="Cédula:").grid(row=0, column=0, padx=5, pady=5, sticky="e")
-        self.e_cedula = ttk.Entry(frame_form, width=40)
+        self.e_cedula = ttk.Entry(frame_form, width=50)
         self.e_cedula.grid(row=0, column=1, padx=5, pady=5, sticky="w")
         
         tk.Label(frame_form, text="Nombre:").grid(row=1, column=0, padx=5, pady=5, sticky="e")
-        self.e_nombre = ttk.Entry(frame_form, width=40)
+        self.e_nombre = ttk.Entry(frame_form, width=50)
         self.e_nombre.grid(row=1, column=1, padx=5, pady=5, sticky="w")
         
         tk.Label(frame_form, text="Apellido:").grid(row=2, column=0, padx=5, pady=5, sticky="e")
-        self.e_apellido = ttk.Entry(frame_form, width=40)
+        self.e_apellido = ttk.Entry(frame_form, width=50)
         self.e_apellido.grid(row=2, column=1, padx=5, pady=5, sticky="w")
 
         tk.Label(frame_form, text="Teléfono:").grid(row=0, column=2, padx=5, pady=5, sticky="e")
-        self.e_telefono = ttk.Entry(frame_form, width=40)
+        self.e_telefono = ttk.Entry(frame_form, width=50)
         self.e_telefono.grid(row=0, column=3, padx=5, pady=5, sticky="w")
         
         tk.Label(frame_form, text="Dirección:").grid(row=1, column=2, padx=5, pady=5, sticky="e")
-        self.e_direccion = ttk.Entry(frame_form, width=40)
+        self.e_direccion = ttk.Entry(frame_form, width=50)
         self.e_direccion.grid(row=1, column=3, rowspan=2, padx=5, pady=5, sticky="w")
 
         # --- Botones de Acción ---
@@ -75,6 +79,8 @@ class ClienteView(tk.Toplevel):
         ttk.Button(botones_frame, text="Buscar por Cédula", command=self._buscar_cliente).grid(row=0, column=2, padx=10, ipady=4)
         ttk.Button(botones_frame, text="Eliminar", command=self._eliminar_cliente).grid(row=0, column=3, padx=10, ipady=4)
         ttk.Button(botones_frame, text="Limpiar", command=self._limpiar_entradas).grid(row=0, column=4, padx=10, ipady=4)
+        ttk.Button(botones_frame, text="Menú", command=self.volver_al_dashboard).grid(row=0, column=5, padx=10, ipady=4)
+
 
     def _cargar_clientes(self):
         for i in self.tabla.get_children():
@@ -198,7 +204,12 @@ class ClienteView(tk.Toplevel):
                 self._limpiar_entradas()
             else:
                 messagebox.showerror("Error", "No se pudo eliminar el cliente. Es posible que esté asociado a una compra.")
-
+    
+    def volver_al_dashboard(self):
+        self.destroy()
+        if self.master:
+            self.master.deiconify()
+    
 if __name__ == "__main__":
     root = tk.Tk()
     root.withdraw()

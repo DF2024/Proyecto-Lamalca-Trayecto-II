@@ -75,6 +75,7 @@ class CompraView(tk.Toplevel):
         ttk.Button(frame_botones, text="Actualizar", command=self._actualizar_compra).grid(row=0, column=1, padx=10)
         ttk.Button(frame_botones, text="Eliminar", command=self._eliminar_compra).grid(row=0, column=2, padx=10)
         ttk.Button(frame_botones, text="Limpiar Formulario", command=self._limpiar_formulario).grid(row=0, column=3, padx=10)
+        ttk.Button(frame_botones, text="Menú", command=self.volver_al_dashboard).grid(row=0, column=4, padx=10)
 
         # --- Frame de la Tabla de Compras ---
         frame_tabla = ttk.LabelFrame(self, text="Historial de Compras")
@@ -265,6 +266,12 @@ class CompraView(tk.Toplevel):
                 self._limpiar_formulario()
             else:
                 messagebox.showerror("Error", "No se pudo eliminar la compra.")
+
+    def volver_al_dashboard(self):
+        self.destroy()
+        if self.master:
+            self.master.deiconify()
+
 
 if __name__ == '__main__':
     # Bloque de prueba

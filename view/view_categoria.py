@@ -54,6 +54,7 @@ class CategoriaView(tk.Toplevel):
         tk.Button(botones_frame, text="Actualizar", command=self._actualizar_categoria).grid(row=0, column=1, padx=5)
         tk.Button(botones_frame, text="Eliminar", command=self._eliminar_categoria).grid(row=0, column=2, padx=5)
         tk.Button(botones_frame, text="Limpiar", command=self._limpiar_entradas).grid(row=0, column=3, padx=5)
+        tk.Button(botones_frame, text="Menú", command=self.volver_al_dashboard).grid(row=0, column=4, padx=5)
 
     def _limpiar_entradas(self):
         self.e_nombre.delete(0, tk.END)
@@ -137,6 +138,12 @@ class CategoriaView(tk.Toplevel):
                     messagebox.showerror("Error", "No se pudo eliminar la categoría. Verifique que no esté en uso por algún producto.")
             except Exception as e:
                 messagebox.showerror("Error", f"Ocurrió un error al eliminar: {e}")
+
+
+    def volver_al_dashboard(self):
+        self.destroy()
+        if self.master:
+            self.master.deiconify()
 
 # --- Bloque para probar la ventana de forma independiente ---
 if __name__ == "__main__":
