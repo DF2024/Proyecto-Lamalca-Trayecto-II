@@ -3,35 +3,43 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 import view.admin_dashboard as admin # Importamos el dashboard del admin
 import view.empleado_dashboard as emple# Importamos el dashboard del empleado
+import customtkinter as ctk #Libreria de CustomTK
+
 
 class LoginWindow(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Inicio de Sesión - Sistema La Malca")
-        self.geometry("350x220")
+        self.geometry("700x500")
         self.resizable(False, False)
-        self.eval('tk::PlaceWindow . center') # Centra la ventana
+        self.eval('tk::PlaceWindow . center') 
+
+
+        ctk.set_appearance_mode("light") 
+        ctk.set_default_color_theme("green")  
+
 
         main_frame = ttk.Frame(self, padding="20")
         main_frame.pack(expand=True, fill="both")
+        main_frame.place(relx=0.5, rely=0.5, anchor="center")
 
-        ttk.Label(main_frame, text="Usuario:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        self.user_entry = ttk.Entry(main_frame)
-        self.user_entry.grid(row=0, column=1, padx=5, pady=5)
 
-        ttk.Label(main_frame, text="Contraseña:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
-        self.pass_entry = ttk.Entry(main_frame, show="*")
-        self.pass_entry.grid(row=1, column=1, padx=5, pady=5)
+        Labeltitle = ctk.CTkLabel(main_frame, text="Bienvenido", font=("Arial", 40, "bold"))
+        Labeltitle.grid(row=0, column=1, padx=5, pady=10)
+
+        self.user_entry = ctk.CTkEntry(main_frame, placeholder_text="Usuario", font=("Arial", 18), width=300, height=30)
+        self.user_entry.grid(row=1, column=1, padx=5, pady=10)
+
+        self.pass_entry = ctk.CTkEntry(main_frame, show="*", placeholder_text="Contraseña", font=("Arial", 18), width=300, height=30)
+        self.pass_entry.grid(row=2, column=1, padx=5, pady=5)
         
         self.pass_entry.bind("<Return>", self.login)
         self.user_entry.focus() # Pone el cursor en el campo de usuario al iniciar
 
-        login_button = ttk.Button(main_frame, text="Iniciar Sesión", command=self.login)
-        login_button.grid(row=2, column=0, columnspan=2, pady=15)
+        login_button = ctk.CTkButton(main_frame, text="Iniciar Sesión", font=("Arial", 15, "bold"), command=self.login)
+        login_button.grid(row=3, column=1, columnspan=2, pady=15)
 
-    # En login.py
 
-# ... (resto del código de la clase LoginWindow) ...
 
     def login(self, event=None):
         usuario = self.user_entry.get().strip()
