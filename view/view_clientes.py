@@ -29,13 +29,13 @@ class ClienteView(tk.Toplevel):
         frame_tabla = ttk.LabelFrame(main_frame, text="Listado de Clientes")
         frame_tabla.pack(pady=10, fill=tk.BOTH, expand=True)
 
-        columnas = ("ID", "Nombre", "Apellido", "Cédula", "Teléfono", "Dirección")
+        columnas = ("ID", "Nombre", "Apellido", "Cédula", "Teléfono", "Dirección", "Correo")
         self.tabla = ttk.Treeview(frame_tabla, columns=columnas, show="headings")
         for col in columnas:
             self.tabla.heading(col, text=col)
             if col == "ID": self.tabla.column(col, width=40, anchor="center")
-            elif col == "Dirección": self.tabla.column(col, width=250)
-            else: self.tabla.column(col, width=120)
+            elif col == "Dirección": self.tabla.column(col, width=250, anchor="center")
+            else: self.tabla.column(col, width=120, anchor="center")
         
         self.tabla.pack(side="left", fill="both", expand=True)
         scrollbar = ttk.Scrollbar(frame_tabla, orient="vertical", command=self.tabla.yview)
@@ -45,6 +45,7 @@ class ClienteView(tk.Toplevel):
 
         frame_form = ttk.LabelFrame(main_frame, text="Datos del Cliente")
         frame_form.pack(pady=10, fill=tk.X)
+
 
         tk.Label(frame_form, text="Cédula:").grid(row=0, column=0, padx=5, pady=5, sticky="e")
         self.e_cedula = ttk.Entry(frame_form, width=50)
@@ -58,13 +59,23 @@ class ClienteView(tk.Toplevel):
         self.e_apellido = ttk.Entry(frame_form, width=50)
         self.e_apellido.grid(row=2, column=1, padx=5, pady=5, sticky="w")
 
+
+        
+
+
+
         tk.Label(frame_form, text="Teléfono:").grid(row=0, column=2, padx=5, pady=5, sticky="e")
         self.e_telefono = ttk.Entry(frame_form, width=50)
         self.e_telefono.grid(row=0, column=3, padx=5, pady=5, sticky="w")
-        
+
         tk.Label(frame_form, text="Dirección:").grid(row=1, column=2, padx=5, pady=5, sticky="e")
         self.e_direccion = ttk.Entry(frame_form, width=50)
-        self.e_direccion.grid(row=1, column=3, rowspan=2, padx=5, pady=5, sticky="w")
+        self.e_direccion.grid(row=1, column=3, padx=5, pady=5, sticky="w")
+
+        tk.Label(frame_form, text="Correo:").grid(row=2, column=2, padx=5, pady=5, sticky="e")
+        self.e_correo = ttk.Entry(frame_form, width=50)
+        self.e_correo.grid(row=2, column=3, padx=5, pady=5, sticky="w")
+
 
         botones_frame = tk.Frame(self)
         botones_frame.pack(pady=10)
@@ -100,6 +111,7 @@ class ClienteView(tk.Toplevel):
             self.e_cedula.insert(0, valores[3])
             self.e_telefono.insert(0, valores[4])
             self.e_direccion.insert(0, valores[5])
+            self.e_correo.insert(0, valores[6])
             self.e_cedula.config(state="disabled")
 
     def _limpiar_entradas(self):
@@ -111,31 +123,39 @@ class ClienteView(tk.Toplevel):
         self.e_cedula.delete(0, tk.END)
         self.e_telefono.delete(0, tk.END)
         self.e_direccion.delete(0, tk.END)
+        self.e_correo.delete(0, tk.END)
         
         if self.tabla.selection():
             self.tabla.selection_remove(self.tabla.selection()[0])
 
     def _agregar_cliente(self):
-        # <<<<<<<<<<<<<<<<<<<<<<<<<<<< CORRECCIÓN PRINCIPAL AQUÍ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        # 1. Obtenemos los datos del formulario
+
         nombre = self.e_nombre.get().strip()
         apellido = self.e_apellido.get().strip()
         cedula = self.e_cedula.get().strip()
         telefono = self.e_telefono.get().strip()
         direccion = self.e_direccion.get().strip()
+        correo = self.e_correo.get().strip()
 
-        # 2. Validamos que los campos obligatorios no estén vacíos
+
         if not all([nombre, apellido, cedula]):
             messagebox.showwarning("Campos Requeridos", "Nombre, Apellido y Cédula son obligatorios.")
             return
 
-        # 3. VERIFICAMOS PRIMERO si la cédula ya existe en la base de datos
+        if not cedula.isdigit():
+            messagebox.showwarning("Dato Inválido", "La cédula debe contener solo números.")
+            return
+        
+        if telefono and not telefono.isdigit():
+            messagebox.showwarning("Dato Inválido", "El teléfono debe contener solo números.")
+            return
+        
         if self.controlador.verificar_existencia_cedula(cedula):
             messagebox.showerror("Error de Duplicado", f"La cédula '{cedula}' ya se encuentra registrada.")
-            return # Detenemos la función si el cliente ya existe
+            return 
 
-        # 4. Si la cédula NO existe, procedemos a INSERTAR
-        resultado = self.controlador.insertar_cliente(nombre, apellido, cedula, telefono, direccion)
+
+        resultado = self.controlador.insertar_cliente(nombre, apellido, cedula, telefono, direccion, correo)
 
         if resultado:
             messagebox.showinfo("Éxito", "Cliente agregado exitosamente.")
@@ -143,9 +163,7 @@ class ClienteView(tk.Toplevel):
             self._limpiar_entradas()
         else:
             messagebox.showerror("Error", "No se pudo agregar el cliente. Contacte al administrador.")
-        # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    # ... (El resto de las funciones _actualizar_cliente, _buscar_cliente, etc., están bien) ...
     def _actualizar_cliente(self):
         cedula = self.e_cedula.get().strip()
         if not cedula or self.id_seleccionado is None:
@@ -156,12 +174,13 @@ class ClienteView(tk.Toplevel):
         apellido = self.e_apellido.get().strip()
         telefono = self.e_telefono.get().strip()
         direccion = self.e_direccion.get().strip()
+        correo = self.e_correo.get().strip()
 
         if not all([nombre, apellido]):
             messagebox.showwarning("Campos Requeridos", "Nombre y Apellido son obligatorios.")
             return
 
-        resultado = self.controlador.actualizar_cliente_por_cedula(nombre, apellido, cedula, telefono, direccion)
+        resultado = self.controlador.actualizar_cliente_por_cedula(nombre, apellido, cedula, telefono, direccion, correo)
         if resultado:
             messagebox.showinfo("Éxito", "Cliente actualizado exitosamente.")
             self._cargar_clientes()
@@ -184,6 +203,7 @@ class ClienteView(tk.Toplevel):
             self.e_cedula.insert(0, cliente[3])
             self.e_telefono.insert(0, cliente[4])
             self.e_direccion.insert(0, cliente[5])
+            self.e_correo.insert(0, cliente[6])
             self.e_cedula.config(state="disabled")
             messagebox.showinfo("Cliente Encontrado", f"Se han cargado los datos de {cliente[1]} {cliente[2]}.")
         else:
@@ -214,3 +234,6 @@ if __name__ == "__main__":
     root.withdraw()
     ventana = ClienteView(root)
     ventana.mainloop()
+
+
+    

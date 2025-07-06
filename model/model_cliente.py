@@ -6,15 +6,26 @@ class Modelo_cliente(Conexion):
         super().__init__()
         self.con = self.get_conexion()
 
-    def Insert(self, nombre, apellido, cedula, telefono, direccion):
+    def Insert(self, nombre, apellido, cedula, telefono, direccion, correo):
+        
+        if not nombre or not apellido or not cedula:
+            print("Error: Nombre, apellido y cédula son obligatorios.")
+            return 0
+        if not cedula.isdigit():
+            print("Error: La cédula debe ser numérica.")
+            return 0
+        if telefono and not telefono.isdigit():
+            print("Error: El teléfono debe ser numérico.")
+            return 0
+        
         cursor = None
         try:
             cursor = self.con.cursor()
             sql = '''
-                INSERT INTO clientes (nombre, apellido, cedula, telefono, direccion)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO clientes (nombre, apellido, cedula, telefono, direccion, correo)
+                VALUES (%s, %s, %s, %s, %s, %s)
             '''
-            cursor.execute(sql, (nombre, apellido, cedula, telefono, direccion))
+            cursor.execute(sql, (nombre, apellido, cedula, telefono, direccion, correo))
             self.con.commit()
             return cursor.rowcount
         except Error as e:
@@ -66,16 +77,16 @@ class Modelo_cliente(Conexion):
             if cursor:
                 cursor.close()
     
-    def Update_por_cedula(self, nombre, apellido, cedula, telefono, direccion):
+    def Update_por_cedula(self, nombre, apellido, cedula, telefono, direccion, correo):
         cursor = None
         try:
             cursor = self.con.cursor()
             sql = '''
                 UPDATE clientes
-                SET nombre = %s, apellido = %s, telefono = %s, direccion = %s
+                SET nombre = %s, apellido = %s, telefono = %s, direccion = %s, correo = %s
                 WHERE cedula = %s
             '''
-            cursor.execute(sql, (nombre, apellido, telefono, direccion, cedula))
+            cursor.execute(sql, (nombre, apellido, telefono, direccion, correo, cedula))
             self.con.commit()
             return cursor.rowcount
         except Error as e:
