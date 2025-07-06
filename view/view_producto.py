@@ -43,7 +43,7 @@ class ProductoView(tk.Toplevel):
         columnas = ("ID", "Nombre", "Descripción", "Precio", "Stock", "Categoría", "Proveedor")
         self.tabla = ttk.Treeview(frame_tabla, columns=columnas, show="headings")
 
-        ###
+        
 
         for col in columnas:
             self.tabla.heading(col, text=col)

@@ -1,3 +1,4 @@
+# Archivo: model/model_inventario.py
 import os 
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),'..')))
@@ -9,62 +10,62 @@ class Modelo_inventario(Conexion):
         super().__init__()
         self.con = self.get_conexion()
 
-
-
-    def Insert(self, id_inventario, id_producto, cantidad_actual, fecha_ultima_entrada, categoria, observaciones, proveedor):
-
+    def Insert(self, producto, cantidad, fecha, id_categoria, observaciones, id_proveedor):
         cursor = None 
-
         try:
             cursor = self.con.cursor()
             sql = '''
-                INSERT INTO inventario (id_inventario, id_producto, cantidad_actual, fecha_ultima_entrada, categoria, observaciones, proveedor)
-                VALUES (%s, %s, %s, %s, %s ,%s, %s)
+                INSERT INTO inventario (producto, cantidad_actual, fecha_ultima_entrada, categoria, observaciones, proveedor)
+                VALUES (%s, %s, %s, %s, %s, %s)
             '''
-
-            valores = (id_producto, cantidad_actual, fecha_ultima_entrada, categoria, observaciones, proveedor)
-            cursor.execute(sql, valores),
+            valores = (producto, cantidad, fecha, id_categoria, observaciones, id_proveedor)
+            cursor.execute(sql, valores)
             self.con.commit()
             return cursor.rowcount
         except Error as e:
-            print(f"Error al insertar producto: {e}")
+            print(f"Error en Modelo_inventario.Insert: {e}")
             return 0
         finally:
             if cursor:
                 cursor.close()
 
     def Select_all(self):
-
         cursor = None
         try:
             cursor = self.con.cursor()
-            sql = ''' SELECT id_inventario, id_producto, cantidad_actual, fecha_ultima_entrada, categoria, observaciones, proveedor FROM inventario  
+            sql = ''' 
+                SELECT 
+                    id_inventario, producto, cantidad_actual, fecha_ultima_entrada, 
+                    observaciones, categoria, proveedor
+                FROM inventario
             '''
             cursor.execute(sql)
             info = cursor.fetchall()
             return info
         except Error as e:
-            print(f"Error al seleccionar todos los productos: {e}")
-            return [] # Retornar lista vacía en caso de error.
+            print(f"Error en Modelo_inventario.Select_all: {e}")
+            return []
         finally:
             if cursor:
                 cursor.close()
 
-    def Uptdate(self, id_inventario ,id_producto, cantidad_actual, fecha_ultima_entrada, categoria, observaciones, proveedor):
+    def Update(self, id_inventario, producto, cantidad, fecha, id_categoria, observaciones, id_proveedor):
         cursor = None 
         try:
             cursor = self.con.cursor()
+            # Nombres de columnas en la BD
             sql = '''
                 UPDATE inventario
-                SET id_producto = %s, cantidad_actual = %s, fecha_ultima_entrada, categoria = %s, observaciones = %s proveedor = %s 
+                SET producto = %s, cantidad_actual = %s, fecha_ultima_entrada = %s, categoria = %s, observaciones = %s, proveedor = %s 
                 WHERE id_inventario = %s
             '''
-            valores = (id_inventario, id_producto, cantidad_actual, fecha_ultima_entrada, categoria, observaciones, proveedor)
+            # El orden de los valores debe coincidir con los %s. El ID para el WHERE va al final.
+            valores = (producto, cantidad, fecha, id_categoria, observaciones, id_proveedor, id_inventario)
             cursor.execute(sql, valores)
             self.con.commit()
             return cursor.rowcount
         except Error as e:
-            print(f"Error al actualizar inventario: {e}")
+            print(f"Error en Modelo_inventario.Update: {e}")
             return 0
         finally: 
             if cursor: 
@@ -79,7 +80,7 @@ class Modelo_inventario(Conexion):
             self.con.commit()
             return cursor.rowcount
         except Error as e:
-            print(f"Error al eliminar producto: {e}")
+            print(f"Error en Modelo_inventario.Delete: {e}")
             return 0
         finally:
             if cursor:
