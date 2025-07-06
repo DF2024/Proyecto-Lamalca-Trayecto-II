@@ -5,7 +5,14 @@ from tkcalendar import DateEntry
 import sys
 import os
 
-# Asegura el acceso a los controladores
+# --- Dependencias de estilo ---
+try:
+    from PIL import Image, ImageTk
+    iconos_disponibles = True
+except ImportError:
+    iconos_disponibles = False
+# ------------------------------
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from controller.controller_compra import Controlador_compra
 from controller.controller_cliente import Controlador_cliente
@@ -15,74 +22,130 @@ class CompraView(tk.Toplevel):
     def __init__(self, master=None):
         super().__init__(master)
         self.title("Registro de Ventas")
-        self.geometry("1100x650") # Un poco más ancho para el stock
+        self.geometry("1200x750")
+
+        # --- Paleta de Tema Oscuro ---
+        self.bg_color = "#2e2e2e"
+        self.fg_color = "#dcdcdc"
+        self.entry_bg = "#3c3c3c"
+        self.select_bg = "#0078D7" # Un azul para la selección, buen contraste
+        self.label_frame_bg = "#3c3c3c"
+
+        self.configure(bg=self.bg_color)
+        
+        # --- Estilos ttk ---
+        style = ttk.Style(self)
+        style.theme_use('clam')
+        
+        style.configure(".", background=self.bg_color, foreground=self.fg_color, fieldbackground=self.entry_bg, bordercolor="#555555")
+        style.configure("TLabel", background=self.bg_color, foreground=self.fg_color)
+        style.configure("TButton", padding=6, relief="flat", background="#4a4a4a", foreground=self.fg_color, font=('Arial', 10))
+        style.map("TButton", background=[('active', '#5a5a5a')])
+        style.configure("Treeview", rowheight=25, fieldbackground=self.entry_bg, background=self.entry_bg, foreground=self.fg_color)
+        style.configure("Treeview.Heading", font=('Arial', 10, 'bold'), background="#3c3c3c", relief="flat")
+        style.map("Treeview.Heading", background=[('active', '#4c4c4c')])
+        style.map("Treeview", background=[('selected', self.select_bg)])
+        style.configure("TLabelframe", background=self.bg_color, bordercolor="#555555")
+        style.configure("TLabelframe.Label", background=self.bg_color, foreground=self.fg_color, font=('Arial', 11, 'bold'))
 
         # Controladores
         self.controlador_compra = Controlador_compra()
         self.controlador_cliente = Controlador_cliente()
         self.controlador_inventario = Controlador_inventario()
 
-        # Datos para la lógica interna
-        self.inventario_data = {}  # {id_inventario: {'nombre': ..., 'precio': ..., 'stock': ...}}
+        # Datos internos
+        self.inventario_data = {}
         self.id_cliente_seleccionado = None
         self.id_compra_seleccionada = None
+        self.iconos = {}
+
+        if iconos_disponibles:
+            self._cargar_iconos()
 
         self._construir_interfaz()
         self._cargar_productos_combobox()
         self._cargar_compras_tabla()
 
+    def _cargar_iconos(self):
+        icon_path = os.path.join(os.path.dirname(__file__), "icons")
+        if not os.path.isdir(icon_path): return
+        icon_files = {
+            "add": "add_light.png", "update": "update_light.png", "delete": "delete_light.png",
+            "search": "search_light.png", "clear": "clear_light.png", "menu": "menu_light.png"
+        }
+        for name, filename in icon_files.items():
+            try:
+                path = os.path.join(icon_path, filename)
+                image = Image.open(path).resize((16, 16), Image.LANCZOS)
+                self.iconos[name] = ImageTk.PhotoImage(image)
+            except Exception:
+                self.iconos[name] = None
+    
     def _construir_interfaz(self):
+        main_frame = tk.Frame(self, bg=self.bg_color)
+        main_frame.pack(padx=20, pady=20, fill=tk.BOTH, expand=True)
+
         # --- Frame del Formulario ---
-        frame_form = ttk.LabelFrame(self, text="Registrar Nueva Venta")
-        frame_form.pack(padx=10, pady=10, fill="x")
+        frame_form = ttk.LabelFrame(main_frame, text="Registrar Nueva Venta", padding=(15, 10))
+        frame_form.pack(pady=10, fill=tk.X)
+        frame_form.columnconfigure(1, weight=1)
+        frame_form.columnconfigure(3, weight=1)
+        frame_form.columnconfigure(5, weight=1)
 
         # Fila 1: Cliente
-        tk.Label(frame_form, text="Cédula Cliente:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        self.entry_cedula = ttk.Entry(frame_form)
-        self.entry_cedula.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+        ttk.Label(frame_form, text="Cédula Cliente:").grid(row=0, column=0, padx=5, pady=8, sticky="w")
+        self.entry_cedula = ttk.Entry(frame_form, font=('Arial', 10))
+        self.entry_cedula.grid(row=0, column=1, padx=5, pady=8, sticky="ew")
         
-        ttk.Button(frame_form, text="Buscar Cliente", command=self._buscar_cliente).grid(row=0, column=2, padx=5, pady=5)
+        btn_buscar_cliente = ttk.Button(frame_form, text="Buscar", image=self.iconos.get('search'), compound=tk.LEFT, command=self._buscar_cliente)
+        btn_buscar_cliente.grid(row=0, column=2, padx=(5, 15), pady=8)
         
-        self.label_nombre_cliente = ttk.Label(frame_form, text="<-- Ingrese Cédula y presione Buscar", foreground="blue")
-        self.label_nombre_cliente.grid(row=0, column=3, columnspan=3, padx=5, pady=5, sticky="w")
+        self.label_nombre_cliente = ttk.Label(frame_form, text="<-- Busque un cliente", font=('Arial', 10, 'italic'))
+        self.label_nombre_cliente.grid(row=0, column=3, columnspan=3, padx=5, pady=8, sticky="w")
 
-        # Fila 2: Producto, Cantidad y Stock
-        tk.Label(frame_form, text="Producto:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
-        self.combo_producto = ttk.Combobox(frame_form, state="readonly")
-        self.combo_producto.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+        # Fila 2: Producto y Cantidad
+        ttk.Label(frame_form, text="Producto:").grid(row=1, column=0, padx=5, pady=8, sticky="w")
+        self.combo_producto = ttk.Combobox(frame_form, state="readonly", font=('Arial', 10))
+        self.combo_producto.grid(row=1, column=1, columnspan=2, padx=5, pady=8, sticky="ew")
         self.combo_producto.bind("<<ComboboxSelected>>", self._actualizar_info_producto)
 
-        tk.Label(frame_form, text="Cantidad:").grid(row=1, column=2, padx=5, pady=5, sticky="w")
+        ttk.Label(frame_form, text="Cantidad:").grid(row=1, column=3, padx=(15, 5), pady=8, sticky="w")
         self.var_cantidad = tk.StringVar()
         self.var_cantidad.trace_add("write", self._actualizar_total)
-        self.entry_cantidad = ttk.Entry(frame_form, textvariable=self.var_cantidad)
-        self.entry_cantidad.grid(row=1, column=3, padx=5, pady=5)
+        self.entry_cantidad = ttk.Entry(frame_form, textvariable=self.var_cantidad, width=10, font=('Arial', 10))
+        self.entry_cantidad.grid(row=1, column=4, padx=5, pady=8, sticky="w")
         
-        tk.Label(frame_form, text="Stock Disponible:").grid(row=1, column=4, padx=5, pady=5, sticky="w")
+        ttk.Label(frame_form, text="Stock:").grid(row=1, column=5, padx=5, pady=8, sticky="e")
         self.label_stock = ttk.Label(frame_form, text="0", font=("Arial", 10, "bold"))
-        self.label_stock.grid(row=1, column=5, padx=5, pady=5, sticky="w")
+        self.label_stock.grid(row=1, column=6, padx=5, pady=8, sticky="w")
         
         # Fila 3: Fecha y Total
-        tk.Label(frame_form, text="Fecha:").grid(row=2, column=0, padx=5, pady=5, sticky="w")
-        self.entry_fecha = DateEntry(frame_form, date_pattern='yyyy-mm-dd', state="readonly")
-        self.entry_fecha.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
+        ttk.Label(frame_form, text="Fecha:").grid(row=2, column=0, padx=5, pady=8, sticky="w")
+        self.entry_fecha = DateEntry(frame_form, date_pattern='yyyy-mm-dd', state="readonly",
+                                     background=self.entry_bg, foreground=self.fg_color, bordercolor=self.bg_color,
+                                     headersbackground=self.bg_color, normalbackground=self.entry_bg,
+                                     weekendbackground=self.entry_bg, othermonthwebackground=self.entry_bg,
+                                     selectbackground=self.select_bg)
+        self.entry_fecha.grid(row=2, column=1, padx=5, pady=8, sticky="ew")
         
-        tk.Label(frame_form, text="Total (Bs.):").grid(row=2, column=2, padx=5, pady=5, sticky="w")
-        self.label_total = ttk.Label(frame_form, text="0.00", font=("Arial", 12, "bold"), foreground="green")
-        self.label_total.grid(row=2, column=3, padx=5, pady=5, sticky="w")
+        ttk.Label(frame_form, text="Total Venta (Bs.):", font=('Arial', 10, 'bold')).grid(row=2, column=5, padx=5, pady=8, sticky="e")
+        self.label_total = ttk.Label(frame_form, text="0.00", font=("Arial", 14, "bold"), foreground="#4CAF50") # Verde brillante
+        self.label_total.grid(row=2, column=6, padx=5, pady=8, sticky="w")
 
-        # Frame de Botones
-        frame_botones = tk.Frame(self)
-        frame_botones.pack(pady=10)
-        ttk.Button(frame_botones, text="Registrar Venta", command=self._registrar_compra).grid(row=0, column=0, padx=10)
-        ttk.Button(frame_botones, text="Actualizar Venta", command=self._actualizar_compra).grid(row=0, column=1, padx=10)
-        ttk.Button(frame_botones, text="Eliminar Venta", command=self._eliminar_compra).grid(row=0, column=2, padx=10)
-        ttk.Button(frame_botones, text="Limpiar", command=self._limpiar_formulario).grid(row=0, column=3, padx=10)
-        ttk.Button(frame_botones, text="Menú", command=self.volver_al_dashboard).grid(row=0, column=4, padx=10)
+        # --- Frame de Botones de Acción ---
+        botones_frame = tk.Frame(main_frame, bg=self.bg_color)
+        botones_frame.pack(pady=20)
+        
+        btn_params = {'ipadx': 10, 'ipady': 5, 'padx': 8}
+        
+        ttk.Button(botones_frame, text="Registrar Venta", image=self.iconos.get('add'), compound=tk.LEFT, command=self._registrar_compra).pack(side=tk.LEFT, **btn_params)
+        ttk.Button(botones_frame, text="Actualizar Venta", image=self.iconos.get('update'), compound=tk.LEFT, command=self._actualizar_compra).pack(side=tk.LEFT, **btn_params)
+        ttk.Button(botones_frame, text="Eliminar Venta", image=self.iconos.get('delete'), compound=tk.LEFT, command=self._eliminar_compra).pack(side=tk.LEFT, **btn_params)
+        ttk.Button(botones_frame, text="Limpiar", image=self.iconos.get('clear'), compound=tk.LEFT, command=self._limpiar_formulario).pack(side=tk.LEFT, **btn_params)
 
-        # Frame de la Tabla de Compras
-        frame_tabla = ttk.LabelFrame(self, text="Historial de Ventas")
-        frame_tabla.pack(padx=10, pady=10, fill="both", expand=True)
+        # --- Frame de la Tabla de Compras ---
+        frame_tabla = ttk.LabelFrame(main_frame, text="Historial de Ventas", padding=(15, 10))
+        frame_tabla.pack(pady=10, fill="both", expand=True)
         
         columnas = ("ID", "Cédula", "Cliente", "Producto", "Cant.", "Fecha", "Total", "ID Cliente", "ID Inventario")
         self.tabla_compras = ttk.Treeview(frame_tabla, columns=columnas, show="headings", displaycolumns=("ID", "Cédula", "Cliente", "Producto", "Cant.", "Fecha", "Total"))
@@ -90,12 +153,18 @@ class CompraView(tk.Toplevel):
         for col in self.tabla_compras["columns"]:
             self.tabla_compras.heading(col, text=col)
             if col == "ID": self.tabla_compras.column(col, width=40, anchor="center")
-            elif col == "Cliente": self.tabla_compras.column(col, width=200, anchor="center")
+            elif col == "Cliente": self.tabla_compras.column(col, width=200)
             elif col == "Cant.": self.tabla_compras.column(col, width=50, anchor="center")
             else: self.tabla_compras.column(col, width=120, anchor="center")
         
-        self.tabla_compras.pack(fill="both", expand=True)
+        self.tabla_compras.pack(side="left", fill="both", expand=True)
+        scrollbar = ttk.Scrollbar(frame_tabla, orient="vertical", command=self.tabla_compras.yview)
+        self.tabla_compras.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
         self.tabla_compras.bind("<<TreeviewSelect>>", self._seleccionar_compra)
+
+        ttk.Button(main_frame, text="Volver al Menú Principal", image=self.iconos.get('menu'), compound=tk.LEFT, command=self.volver_al_dashboard).pack(pady=(10,0))
+
     
     def _cargar_productos_combobox(self):
         self.inventario_data.clear()
@@ -116,8 +185,11 @@ class CompraView(tk.Toplevel):
             self.tabla_compras.delete(item)
         compras = self.controlador_compra.obtener_todas_las_compras()
         if compras:
-            for compra in compras:
-                self.tabla_compras.insert("", "end", values=compra)
+            for i, compra in enumerate(compras):
+                tag = 'evenrow' if i % 2 == 0 else 'oddrow'
+                self.tabla_compras.insert("", "end", values=compra, tags=(tag,))
+        self.tabla_compras.tag_configure('evenrow', background=self.bg_color, foreground=self.fg_color)
+        self.tabla_compras.tag_configure('oddrow', background=self.entry_bg, foreground=self.fg_color)
     
     def _buscar_cliente(self):
         cedula = self.entry_cedula.get().strip()
@@ -129,10 +201,10 @@ class CompraView(tk.Toplevel):
         if cliente:
             self.id_cliente_seleccionado = cliente[0]
             nombre_completo = f"{cliente[1]} {cliente[2]}"
-            self.label_nombre_cliente.config(text=f"Cliente: {nombre_completo}", foreground="green")
+            self.label_nombre_cliente.config(text=f"Cliente: {nombre_completo}", foreground="#4CAF50") # Verde
         else:
             self.id_cliente_seleccionado = None
-            self.label_nombre_cliente.config(text="Cliente no encontrado.", foreground="red")
+            self.label_nombre_cliente.config(text="Cliente no encontrado.", foreground="#F44336") # Rojo
 
     def _actualizar_info_producto(self, *args):
         nombre_prod_sel = self.combo_producto.get()
@@ -175,7 +247,7 @@ class CompraView(tk.Toplevel):
         self.id_compra_seleccionada = None
         self.id_cliente_seleccionado = None
         self.entry_cedula.delete(0, "end")
-        self.label_nombre_cliente.config(text="<-- Ingrese Cédula y presione Buscar", foreground="blue")
+        self.label_nombre_cliente.config(text="<-- Busque un cliente", foreground=self.fg_color, font=('Arial', 10, 'italic'))
         self.combo_producto.set('')
         self.var_cantidad.set('')
         self.label_total.config(text="0.00")
@@ -227,18 +299,15 @@ class CompraView(tk.Toplevel):
         item_seleccionado = self.tabla_compras.focus()
         if not item_seleccionado: return
         
-        # Obtenemos todos los valores, incluyendo los ocultos
         valores = self.tabla_compras.item(item_seleccionado, 'values')
         
         self.id_compra_seleccionada = valores[0]
         self.entry_cedula.delete(0, "end"); self.entry_cedula.insert(0, valores[1])
-        self.label_nombre_cliente.config(text=f"Cliente: {valores[2]}", foreground="green")
+        self.label_nombre_cliente.config(text=f"Cliente: {valores[2]}", foreground="#4CAF50")
         self.combo_producto.set(valores[3])
         self.var_cantidad.set(valores[4])
         self.entry_fecha.set_date(valores[5])
-        self.label_total.config(text=valores[6])
         self.id_cliente_seleccionado = valores[7]
-        # Actualizamos el label de stock para el producto seleccionado
         self._actualizar_info_producto()
         
     def _actualizar_compra(self):
@@ -252,22 +321,30 @@ class CompraView(tk.Toplevel):
             
         nombre_prod_nuevo = self.combo_producto.get()
         id_inventario_nuevo = next((inv_id for inv_id, data in self.inventario_data.items() if data['nombre'] == nombre_prod_nuevo), None)
+        
         if not id_inventario_nuevo:
-            messagebox.showerror("Error", "Debe seleccionar un producto válido.")
+            # Si el producto no está en la lista (stock 0), lo buscamos en la BD para permitir la actualización
+            # Esto es un caso borde, pero robustece la app.
+            all_products = self.controlador_inventario.obtener_todo_inventario_completo() # Necesitaríamos esta función
+            for item in all_products:
+                if item[1] == nombre_prod_nuevo:
+                    id_inventario_nuevo = item[0]
+                    break
+        
+        if not id_inventario_nuevo:
+            messagebox.showerror("Error", "El producto seleccionado ya no es válido.")
             return
         
-        stock_disponible = self.inventario_data[id_inventario_nuevo]['stock']
-
         try:
             cantidad_nueva = int(self.var_cantidad.get())
             if cantidad_nueva <= 0: raise ValueError("La cantidad debe ser positiva.")
             
-            # Validar stock disponible. Si el producto es el mismo, el stock disponible real
-            # es el actual + lo que se va a devolver de la compra original.
             item_original = self.tabla_compras.item(self.tabla_compras.focus(), 'values')
             id_inventario_original = int(item_original[8])
             cantidad_original = int(item_original[4])
 
+            # Verificamos el stock disponible en el inventario actual
+            stock_disponible = self.inventario_data.get(id_inventario_nuevo, {}).get('stock', 0)
             if id_inventario_nuevo == id_inventario_original:
                 stock_disponible += cantidad_original
 
@@ -275,8 +352,8 @@ class CompraView(tk.Toplevel):
                 messagebox.showerror("Stock Insuficiente", f"No hay suficiente stock. Disponible (considerando devolución): {stock_disponible}")
                 return
 
-        except ValueError as e:
-            messagebox.showerror("Error de Cantidad", str(e) if str(e) else "La cantidad debe ser un número entero mayor que cero.")
+        except (ValueError, IndexError) as e:
+            messagebox.showerror("Error de Cantidad", f"La cantidad no es válida o hay un problema con la selección: {e}")
             return
         
         fecha = self.entry_fecha.get_date().strftime('%Y-%m-%d')
@@ -298,7 +375,7 @@ class CompraView(tk.Toplevel):
             messagebox.showerror("Error", "Debe seleccionar una venta de la lista para eliminar.")
             return
         
-        if messagebox.askyesno("Confirmar", f"¿Está seguro de eliminar la venta ID {self.id_compra_seleccionada}?\nEl stock del producto será devuelto al inventario."):
+        if messagebox.askyesno("Confirmar", f"¿Está seguro de eliminar la venta ID {self.id_compra_seleccionada}?\nEl stock del producto será devuelto al inventario.", icon='warning'):
             resultado = self.controlador_compra.eliminar_compra(self.id_compra_seleccionada)
             if resultado:
                 messagebox.showinfo("Éxito", "Venta eliminada y stock devuelto.")
