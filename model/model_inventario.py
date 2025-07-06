@@ -1,4 +1,5 @@
 # Archivo: model/model_inventario.py
+
 import os 
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),'..')))
@@ -10,15 +11,16 @@ class Modelo_inventario(Conexion):
         super().__init__()
         self.con = self.get_conexion()
 
-    def Insert(self, producto, cantidad, fecha, id_categoria, observaciones, id_proveedor):
+    # <<-- MODIFICADO: Añadido 'precio_unitario' -->>
+    def Insert(self, producto, cantidad, precio_unitario, fecha, id_categoria, observaciones, id_proveedor):
         cursor = None 
         try:
             cursor = self.con.cursor()
             sql = '''
-                INSERT INTO inventario (producto, cantidad_actual, fecha_ultima_entrada, categoria, observaciones, proveedor)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                INSERT INTO inventario (producto, cantidad_actual, precio_unitario, fecha_ultima_entrada, categoria, observaciones, proveedor)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
             '''
-            valores = (producto, cantidad, fecha, id_categoria, observaciones, id_proveedor)
+            valores = (producto, cantidad, precio_unitario, fecha, id_categoria, observaciones, id_proveedor)
             cursor.execute(sql, valores)
             self.con.commit()
             return cursor.rowcount
@@ -33,10 +35,11 @@ class Modelo_inventario(Conexion):
         cursor = None
         try:
             cursor = self.con.cursor()
+            # <<-- MODIFICADO: Añadido 'precio_unitario' al SELECT -->>
             sql = ''' 
                 SELECT 
-                    id_inventario, producto, cantidad_actual, fecha_ultima_entrada, 
-                    observaciones, categoria, proveedor
+                    id_inventario, producto, cantidad_actual, precio_unitario, 
+                    fecha_ultima_entrada, observaciones, categoria, proveedor
                 FROM inventario
             '''
             cursor.execute(sql)
@@ -49,18 +52,63 @@ class Modelo_inventario(Conexion):
             if cursor:
                 cursor.close()
 
-    def Update(self, id_inventario, producto, cantidad, fecha, id_categoria, observaciones, id_proveedor):
+    def actualizar_stock(self, id_inventario, cantidad_a_cambiar):
+        cursor = None
+        try:
+            cursor = self.con.cursor()
+            # Esta consulta suma o resta la cantidad al valor actual
+            sql = "UPDATE inventario SET cantidad_actual = cantidad_actual + %s WHERE id_inventario = %s"
+            cursor.execute(sql, (cantidad_a_cambiar, id_inventario))
+            self.con.commit()
+            return cursor.rowcount
+        except Error as e:
+            print(f"Error al actualizar stock: {e}")
+            return 0
+        finally:
+            if cursor:
+                cursor.close()
+
+    def buscar_por_nombre(self, nombre_producto, id_a_excluir=None):
+        """
+        Busca un producto por su nombre.
+        - Si se provee un 'id_a_excluir', lo ignora en la búsqueda (útil para la actualización).
+        - Retorna el producto si lo encuentra, de lo contrario retorna None.
+        """
+        cursor = None
+        try:
+            cursor = self.con.cursor()
+            
+            # Construcción dinámica de la consulta
+            sql = "SELECT id_inventario FROM inventario WHERE producto = %s LIMIT 1"
+            params = (nombre_producto,)
+
+            if id_a_excluir is not None:
+                # Si estamos actualizando, no queremos que se encuentre a sí mismo como un duplicado
+                sql = "SELECT id_inventario FROM inventario WHERE producto = %s AND id_inventario != %s LIMIT 1"
+                params = (nombre_producto, id_a_excluir)
+
+            cursor.execute(sql, params)
+            return cursor.fetchone()
+        except Error as e:
+            print(f"Error en Modelo_inventario.buscar_por_nombre: {e}")
+            return None
+        finally:
+            if cursor:
+                cursor.close()
+
+
+    # <<-- MODIFICADO: Añadido 'precio_unitario' -->>
+    def Update(self, id_inventario, producto, cantidad, precio_unitario, fecha, id_categoria, observaciones, id_proveedor):
         cursor = None 
         try:
             cursor = self.con.cursor()
-            # Nombres de columnas en la BD
             sql = '''
                 UPDATE inventario
-                SET producto = %s, cantidad_actual = %s, fecha_ultima_entrada = %s, categoria = %s, observaciones = %s, proveedor = %s 
+                SET producto = %s, cantidad_actual = %s, precio_unitario = %s, 
+                    fecha_ultima_entrada = %s, categoria = %s, observaciones = %s, proveedor = %s 
                 WHERE id_inventario = %s
             '''
-            # El orden de los valores debe coincidir con los %s. El ID para el WHERE va al final.
-            valores = (producto, cantidad, fecha, id_categoria, observaciones, id_proveedor, id_inventario)
+            valores = (producto, cantidad, precio_unitario, fecha, id_categoria, observaciones, id_proveedor, id_inventario)
             cursor.execute(sql, valores)
             self.con.commit()
             return cursor.rowcount
@@ -71,6 +119,7 @@ class Modelo_inventario(Conexion):
             if cursor: 
                 cursor.close()
 
+    # ... (El resto de funciones como Delete, __del__, etc., se quedan igual) ...
     def Delete(self, id_inventario):
         cursor = None
         try:
@@ -82,22 +131,6 @@ class Modelo_inventario(Conexion):
         except Error as e:
             print(f"Error en Modelo_inventario.Delete: {e}")
             return 0
-        finally:
-            if cursor:
-                cursor.close()
-
-    def buscar_por_nombre(self, nombre_producto):
-
-        cursor = None
-        try:
-            cursor = self.con.cursor()
-            # Usamos LIMIT 1 porque solo necesitamos saber si existe al menos uno. Es más eficiente.
-            sql = "SELECT * FROM inventario WHERE producto = %s LIMIT 1"
-            cursor.execute(sql, (nombre_producto,))
-            return cursor.fetchone()  # Retorna una tupla si lo encuentra, None si no.
-        except Error as e:
-            print(f"Error en Modelo_inventario.buscar_por_nombre: {e}")
-            return None # En caso de error, asumimos que no existe para no bloquear al usuario.
         finally:
             if cursor:
                 cursor.close()

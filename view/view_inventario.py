@@ -14,7 +14,7 @@ class InventarioView(tk.Toplevel):
     def __init__(self, master=None):
         super().__init__(master)
         self.title("Gestión de Inventario")
-        self.geometry("950x600")
+        self.geometry("1050x600") # Un poco más ancho para el nuevo campo
 
         self.controlador_inventario = Controlador_inventario()
         self.controlador_categoria = Controlador_categoria()
@@ -37,14 +37,15 @@ class InventarioView(tk.Toplevel):
         frame_tabla = tk.Frame(main_frame)
         frame_tabla.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
-        columnas = ("ID", "Producto", "Cantidad", "Fecha Entrada", "Categoría", "Observaciones", "Proveedor")
+        # <<-- MODIFICADO: Añadida la columna "Precio Unitario" -->>
+        columnas = ("ID", "Producto", "Cantidad", "Precio Unitario", "Fecha Entrada", "Categoría", "Observaciones", "Proveedor")
         self.tabla = ttk.Treeview(frame_tabla, columns=columnas, show="headings")
 
         for col in columnas:
             self.tabla.heading(col, text=col)
             if col == "ID": self.tabla.column(col, width=40, anchor=tk.CENTER)
-            elif col == "Observaciones": self.tabla.column(col, width=200)
-            elif col == "Producto": self.tabla.column(col, width=150)
+            elif col == "Observaciones": self.tabla.column(col, width=200,  anchor=tk.CENTER)
+            elif col == "Producto": self.tabla.column(col, width=150, anchor=tk.CENTER)
             else: self.tabla.column(col, width=100, anchor=tk.CENTER)
         
         self.tabla.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -56,29 +57,39 @@ class InventarioView(tk.Toplevel):
         frame_form = ttk.LabelFrame(main_frame, text="Datos del Producto")
         frame_form.pack(pady=10, fill=tk.X)
 
+        # <<-- MODIFICADO: Reorganización del formulario para incluir el nuevo campo -->>
+        # Fila 0
         tk.Label(frame_form, text="Producto:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        self.e_producto = ttk.Entry(frame_form, width=40)
+        self.e_producto = ttk.Entry(frame_form)
         self.e_producto.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
 
         tk.Label(frame_form, text="Observaciones:").grid(row=0, column=2, padx=5, pady=5, sticky="w")
-        self.e_observaciones = ttk.Entry(frame_form, width=40)
+        self.e_observaciones = ttk.Entry(frame_form)
         self.e_observaciones.grid(row=0, column=3, padx=5, pady=5, sticky="ew")
 
+        # Fila 1
         tk.Label(frame_form, text="Cantidad:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
         self.e_cantidad = ttk.Entry(frame_form)
         self.e_cantidad.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
         
-        tk.Label(frame_form, text="Categoría:").grid(row=1, column=2, padx=5, pady=5, sticky="w")
+        # <<-- NUEVO: Campo para Precio Unitario -->>
+        tk.Label(frame_form, text="Precio Unitario:").grid(row=1, column=2, padx=5, pady=5, sticky="w")
+        self.e_precio_unitario = ttk.Entry(frame_form)
+        self.e_precio_unitario.grid(row=1, column=3, padx=5, pady=5, sticky="ew")
+
+        # Fila 2
+        tk.Label(frame_form, text="Categoría:").grid(row=2, column=0, padx=5, pady=5, sticky="w")
         self.combo_categoria = ttk.Combobox(frame_form, state="readonly")
-        self.combo_categoria.grid(row=1, column=3, padx=5, pady=5, sticky="ew")
-
-        tk.Label(frame_form, text="Proveedor:").grid(row=2, column=0, padx=5, pady=5, sticky="w")
+        self.combo_categoria.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
+        
+        tk.Label(frame_form, text="Proveedor:").grid(row=2, column=2, padx=5, pady=5, sticky="w")
         self.combo_proveedor = ttk.Combobox(frame_form, state="readonly")
-        self.combo_proveedor.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
-
-        tk.Label(frame_form, text="Fecha:").grid(row=2, column=2, padx=5, pady=5, sticky="w")
+        self.combo_proveedor.grid(row=2, column=3, padx=5, pady=5, sticky="ew")
+        
+        # Fila 3
+        tk.Label(frame_form, text="Fecha:").grid(row=3, column=0, padx=5, pady=5, sticky="w")
         self.e_fecha = DateEntry(frame_form, date_pattern='yyyy-mm-dd', state="readonly")
-        self.e_fecha.grid(row=2, column=3, padx=5, pady=5, sticky="ew")
+        self.e_fecha.grid(row=3, column=1, padx=5, pady=5, sticky="ew")
 
         frame_form.columnconfigure(1, weight=1)
         frame_form.columnconfigure(3, weight=1)
@@ -118,11 +129,19 @@ class InventarioView(tk.Toplevel):
         try:
             inventario = self.controlador_inventario.obtener_todo_inventario()
             if inventario:
+                # <<-- MODIFICADO: Desempaquetado con el nuevo campo -->>
                 for item in inventario:
-                    id_inv, producto, cantidad, fecha, observaciones, id_categoria, id_proveedor = item
+                    id_inv, producto, cantidad, precio_unitario, fecha, observaciones, id_categoria, id_proveedor = item
                     nombre_cat = self.categorias_map_rev.get(id_categoria, "N/A")
                     nombre_prov = self.proveedores_map_rev.get(id_proveedor, "N/A")
-                    self.tabla.insert("", tk.END, values=(id_inv, producto, cantidad, fecha, nombre_cat, observaciones, nombre_prov))
+                    
+                    # Formatear el precio para mostrarlo con 2 decimales
+                    precio_formateado = f"{float(precio_unitario):.2f}" if precio_unitario else "0.00"
+
+                    # <<-- MODIFICADO: Añadido el precio a los valores de la tabla -->>
+                    self.tabla.insert("", tk.END, values=(
+                        id_inv, producto, cantidad, precio_formateado, fecha, nombre_cat, observaciones, nombre_prov
+                    ))
         except Exception as e:
             messagebox.showerror("Error", f"Error al cargar el inventario: {e}")
 
@@ -132,11 +151,13 @@ class InventarioView(tk.Toplevel):
             valores = self.tabla.item(selected_item, 'values')
             self._limpiar_entradas()
             
-            id_inv, producto, cantidad, fecha, categoria, observaciones, proveedor = valores
+            # <<-- MODIFICADO: Desempaquetado con el nuevo campo -->>
+            id_inv, producto, cantidad, precio, fecha, categoria, observaciones, proveedor = valores
             
             self.id_seleccionado = id_inv
             self.e_producto.insert(0, producto)
             self.e_cantidad.insert(0, cantidad)
+            self.e_precio_unitario.insert(0, precio) # <<-- NUEVO
             self.e_fecha.set_date(fecha)
             self.combo_categoria.set(categoria)
             self.e_observaciones.insert(0, observaciones)
@@ -146,6 +167,7 @@ class InventarioView(tk.Toplevel):
         self.id_seleccionado = None
         self.e_producto.delete(0, tk.END)
         self.e_cantidad.delete(0, tk.END)
+        self.e_precio_unitario.delete(0, tk.END) # <<-- NUEVO
         try:
             self.e_fecha.set_date(None)
         except Exception:
@@ -159,6 +181,7 @@ class InventarioView(tk.Toplevel):
     def _obtener_datos_formulario(self):
         producto = self.e_producto.get().strip()
         cantidad_str = self.e_cantidad.get().strip()
+        precio_str = self.e_precio_unitario.get().strip() # <<-- NUEVO
         
         try:
             fecha = self.e_fecha.get_date()
@@ -169,18 +192,21 @@ class InventarioView(tk.Toplevel):
         observaciones = self.e_observaciones.get().strip()
         nombre_prov = self.combo_proveedor.get()
 
-        campos_obligatorios = [producto, cantidad_str, fecha, nombre_cat, nombre_prov]
+        # <<-- MODIFICADO: Añadido 'precio_str' a los campos obligatorios -->>
+        campos_obligatorios = [producto, cantidad_str, precio_str, fecha, nombre_cat, nombre_prov]
         if not all(campos_obligatorios):
             messagebox.showwarning("Campos incompletos", "Todos los campos, excepto observaciones, son obligatorios.")
             return None
 
+        # <<-- MODIFICADO: Validación para cantidad y precio -->>
         try:
             cantidad_val = int(cantidad_str)
-            if cantidad_val < 0:
-                messagebox.showwarning("Datos inválidos", "La cantidad no puede ser negativa.")
+            precio_val = float(precio_str) # Usamos float para la validación
+            if cantidad_val < 0 or precio_val < 0:
+                messagebox.showwarning("Datos inválidos", "La cantidad y el precio no pueden ser negativos.")
                 return None
         except ValueError:
-            messagebox.showwarning("Datos inválidos", "La cantidad debe ser un número entero.")
+            messagebox.showwarning("Datos inválidos", "La cantidad debe ser un número entero y el precio un número válido.")
             return None
 
         id_categoria = self.categorias_map.get(nombre_cat)
@@ -192,23 +218,24 @@ class InventarioView(tk.Toplevel):
         if id_proveedor is None:
             messagebox.showerror("Error de datos", f"El proveedor '{nombre_prov}' no es válido.")
             return None
-
-        return producto, cantidad_val, fecha, observaciones, id_categoria, id_proveedor
+        
+        # <<-- MODIFICADO: Retorno de datos con el nuevo campo -->>
+        return producto, cantidad_val, precio_val, fecha, observaciones, id_categoria, id_proveedor
 
     def _agregar_inventario(self):
         datos = self._obtener_datos_formulario()
         if datos:
-            producto, cantidad, fecha, observaciones, id_categoria, id_proveedor = datos
+            producto, cantidad, precio, fecha, observaciones, id_categoria, id_proveedor = datos
 
-
+            # <<<<<<<<<<<<<<< VALIDACIÓN DE DUPLICADOS AL AGREGAR >>>>>>>>>>>>>>>
             if self.controlador_inventario.verificar_existencia_producto(producto):
-                messagebox.showerror("Error de Duplicado", f"El producto '{producto}' ya se encuentra registrado.")
-                return 
+                messagebox.showerror("Producto Duplicado", f"El producto '{producto}' ya existe en el inventario.")
+                return # Detenemos la operación
+            # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
             resultado = self.controlador_inventario.insertar_inventario(
-                producto, cantidad, fecha, id_categoria, observaciones, id_proveedor
+                producto, cantidad, precio, fecha, id_categoria, observaciones, id_proveedor
             )
-            
             if resultado:
                 messagebox.showinfo("Éxito", "Producto agregado exitosamente.")
                 self._cargar_inventario()
@@ -216,28 +243,33 @@ class InventarioView(tk.Toplevel):
             else:
                 messagebox.showerror("Error", "No se pudo agregar el producto.")
 
+# ... (reemplaza la función _actualizar_inventario) ...
     def _actualizar_inventario(self):
         if not self.id_seleccionado:
             messagebox.showwarning("No seleccionado", "Por favor, seleccione un producto de la lista.")
             return
+            
         datos = self._obtener_datos_formulario()
         if datos:
-            producto, cantidad, fecha, observaciones, id_categoria, id_proveedor = datos
-            
-            # <<<<<<<<<<<<<<<<<<<< ESTA ES LA CORRECCIÓN MÁS IMPORTANTE >>>>>>>>>>>>>>>>>>>>>>
-            # La llamada al controlador ahora coincide con la firma del método en el controlador.
-            # Pasamos `id_categoria` al parámetro `categoria` y `observaciones` al parámetro `observaciones`.
+            producto, cantidad, precio, fecha, observaciones, id_categoria, id_proveedor = datos
+
+            # <<<<<<<<<<<<<<< VALIDACIÓN DE DUPLICADOS AL ACTUALIZAR >>>>>>>>>>>>>
+            # Verificamos si ya existe OTRO producto con ese nombre
+            if self.controlador_inventario.verificar_existencia_producto(producto, self.id_seleccionado):
+                messagebox.showerror("Producto Duplicado", f"Ya existe otro producto con el nombre '{producto}'.")
+                return # Detenemos la operación
+            # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
             resultado = self.controlador_inventario.actualizar_inventario(
-                self.id_seleccionado, producto, cantidad, fecha, id_categoria, observaciones, id_proveedor
+                self.id_seleccionado, producto, cantidad, precio, fecha, id_categoria, observaciones, id_proveedor
             )
-            # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-            
             if resultado:
                 messagebox.showinfo("Éxito", "Producto actualizado exitosamente.")
                 self._cargar_inventario()
                 self._limpiar_entradas()
             else:
                 messagebox.showerror("Error", "No se pudo actualizar el producto.")
+
 
     def _eliminar_inventario(self):
         if not self.id_seleccionado:
