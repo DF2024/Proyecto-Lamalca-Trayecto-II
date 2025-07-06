@@ -1,7 +1,8 @@
+# Archivo: controller/controller_cliente.py
+
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from model.model_cliente import Modelo_cliente
 
 class Controlador_cliente:
@@ -9,7 +10,7 @@ class Controlador_cliente:
         self.modelo = Modelo_cliente()
 
     def insertar_cliente(self, nombre, apellido, cedula, telefono, direccion):
-        return self.modelo.Insert( nombre, apellido, cedula, telefono, direccion)
+        return self.modelo.Insert(nombre, apellido, cedula, telefono, direccion)
 
     def obtener_cliente_por_cedula(self, cedula):
         return self.modelo.Select_por_cedula(cedula)
@@ -17,10 +18,16 @@ class Controlador_cliente:
     def obtener_todos_los_clientes(self):
         return self.modelo.Select_all()
 
-    
+    def verificar_existencia_cedula(self, cedula):
+        """
+        Verifica si un cliente ya existe usando su cédula.
+        Retorna True si existe, False si no.
+        """
+        cliente = self.modelo.buscar_por_cedula(cedula)
+        return cliente is not None
+
     def actualizar_cliente_por_cedula(self, nombre, apellido, cedula, telefono, direccion):
         return self.modelo.Update_por_cedula(nombre, apellido, cedula, telefono, direccion)
 
     def eliminar_cliente_por_cedula(self, cedula):
         return self.modelo.Delete_por_cedula(cedula)
-    

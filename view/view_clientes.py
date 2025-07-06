@@ -1,10 +1,10 @@
-# view/view_cliente.py
+# Archivo: ClienteView.py
+
 import tkinter as tk
 from tkinter import messagebox, ttk
 import sys
 import os
 
-# Asegura el acceso al paquete controladores
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from controller.controller_cliente import Controlador_cliente
 
@@ -15,20 +15,17 @@ class ClienteView(tk.Toplevel):
         self.geometry("900x600")
         
         self.controlador = Controlador_cliente()
-        self.id_seleccionado = None  # Para guardar el ID interno del cliente
+        self.id_seleccionado = None
 
         self._construir_interfaz()
         self._cargar_clientes()
 
-
-    
     def _construir_interfaz(self):
+        # ... (esta función está perfecta, no necesita cambios) ...
+        # ... la pego aquí para que tengas el código completo ...
         main_frame = tk.Frame(self)
         main_frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
-
-
-        # --- Tabla de Clientes ---
         frame_tabla = ttk.LabelFrame(main_frame, text="Listado de Clientes")
         frame_tabla.pack(pady=10, fill=tk.BOTH, expand=True)
 
@@ -46,11 +43,9 @@ class ClienteView(tk.Toplevel):
         scrollbar.pack(side="right", fill="y")
         self.tabla.bind("<<TreeviewSelect>>", self._seleccionar_fila)
 
-        # --- Formulario de Entrada ---
         frame_form = ttk.LabelFrame(main_frame, text="Datos del Cliente")
         frame_form.pack(pady=10, fill=tk.X)
 
-        # Usamos ttk para un look más moderno y consistente
         tk.Label(frame_form, text="Cédula:").grid(row=0, column=0, padx=5, pady=5, sticky="e")
         self.e_cedula = ttk.Entry(frame_form, width=50)
         self.e_cedula.grid(row=0, column=1, padx=5, pady=5, sticky="w")
@@ -71,7 +66,6 @@ class ClienteView(tk.Toplevel):
         self.e_direccion = ttk.Entry(frame_form, width=50)
         self.e_direccion.grid(row=1, column=3, rowspan=2, padx=5, pady=5, sticky="w")
 
-        # --- Botones de Acción ---
         botones_frame = tk.Frame(self)
         botones_frame.pack(pady=10)
         ttk.Button(botones_frame, text="Agregar", command=self._agregar_cliente).grid(row=0, column=0, padx=10, ipady=4)
@@ -81,41 +75,36 @@ class ClienteView(tk.Toplevel):
         ttk.Button(botones_frame, text="Limpiar", command=self._limpiar_entradas).grid(row=0, column=4, padx=10, ipady=4)
         ttk.Button(botones_frame, text="Menú", command=self.volver_al_dashboard).grid(row=0, column=5, padx=10, ipady=4)
 
-
     def _cargar_clientes(self):
+        # ... (esta función está perfecta, no necesita cambios) ...
         for i in self.tabla.get_children():
             self.tabla.delete(i)
         try:
             clientes = self.controlador.obtener_todos_los_clientes()
             if clientes:
                 for c in clientes:
-                    # El modelo devuelve (id, nombre, apellido, cedula, telefono, direccion)
                     self.tabla.insert("", tk.END, values=c)
         except Exception as e:
             messagebox.showerror("Error de Carga", f"Error al cargar los clientes: {e}")
 
     def _seleccionar_fila(self, event):
+        # ... (esta función está perfecta, no necesita cambios) ...
         item_seleccionado = self.tabla.focus()
         if item_seleccionado:
             valores = self.tabla.item(item_seleccionado, 'values')
             self._limpiar_entradas()
             
-            # El ID es el primer valor (índice 0)
             self.id_seleccionado = valores[0]
-            
-            # Llenar los campos con los demás valores
             self.e_nombre.insert(0, valores[1])
             self.e_apellido.insert(0, valores[2])
             self.e_cedula.insert(0, valores[3])
             self.e_telefono.insert(0, valores[4])
             self.e_direccion.insert(0, valores[5])
-            
-            # Deshabilitar el entry de la cédula para evitar que se modifique
-            # ya que es nuestra clave para actualizar y eliminar.
             self.e_cedula.config(state="disabled")
 
     def _limpiar_entradas(self):
-        self.e_cedula.config(state="normal") # Habilitar la cédula antes de limpiar
+        # ... (esta función está perfecta, no necesita cambios) ...
+        self.e_cedula.config(state="normal")
         self.id_seleccionado = None
         self.e_nombre.delete(0, tk.END)
         self.e_apellido.delete(0, tk.END)
@@ -127,26 +116,37 @@ class ClienteView(tk.Toplevel):
             self.tabla.selection_remove(self.tabla.selection()[0])
 
     def _agregar_cliente(self):
+        # <<<<<<<<<<<<<<<<<<<<<<<<<<<< CORRECCIÓN PRINCIPAL AQUÍ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        # 1. Obtenemos los datos del formulario
         nombre = self.e_nombre.get().strip()
         apellido = self.e_apellido.get().strip()
         cedula = self.e_cedula.get().strip()
         telefono = self.e_telefono.get().strip()
         direccion = self.e_direccion.get().strip()
 
+        # 2. Validamos que los campos obligatorios no estén vacíos
         if not all([nombre, apellido, cedula]):
             messagebox.showwarning("Campos Requeridos", "Nombre, Apellido y Cédula son obligatorios.")
             return
 
+        # 3. VERIFICAMOS PRIMERO si la cédula ya existe en la base de datos
+        if self.controlador.verificar_existencia_cedula(cedula):
+            messagebox.showerror("Error de Duplicado", f"La cédula '{cedula}' ya se encuentra registrada.")
+            return # Detenemos la función si el cliente ya existe
+
+        # 4. Si la cédula NO existe, procedemos a INSERTAR
         resultado = self.controlador.insertar_cliente(nombre, apellido, cedula, telefono, direccion)
+
         if resultado:
             messagebox.showinfo("Éxito", "Cliente agregado exitosamente.")
             self._cargar_clientes()
             self._limpiar_entradas()
         else:
-            messagebox.showerror("Error", "No se pudo agregar el cliente. Es posible que la cédula ya exista.")
+            messagebox.showerror("Error", "No se pudo agregar el cliente. Contacte al administrador.")
+        # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    # ... (El resto de las funciones _actualizar_cliente, _buscar_cliente, etc., están bien) ...
     def _actualizar_cliente(self):
-        # La cédula se obtiene del campo de texto, que fue llenado al seleccionar
         cedula = self.e_cedula.get().strip()
         if not cedula or self.id_seleccionado is None:
             messagebox.showwarning("Acción Requerida", "Debe seleccionar un cliente de la lista para actualizar.")
@@ -178,7 +178,6 @@ class ClienteView(tk.Toplevel):
         cliente = self.controlador.obtener_cliente_por_cedula(cedula)
         if cliente:
             self._limpiar_entradas()
-            # Llenamos los campos con los datos encontrados
             self.id_seleccionado = cliente[0]
             self.e_nombre.insert(0, cliente[1])
             self.e_apellido.insert(0, cliente[2])

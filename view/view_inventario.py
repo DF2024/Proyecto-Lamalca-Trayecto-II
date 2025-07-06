@@ -199,9 +199,16 @@ class InventarioView(tk.Toplevel):
         datos = self._obtener_datos_formulario()
         if datos:
             producto, cantidad, fecha, observaciones, id_categoria, id_proveedor = datos
+
+
+            if self.controlador_inventario.verificar_existencia_producto(producto):
+                messagebox.showerror("Error de Duplicado", f"El producto '{producto}' ya se encuentra registrado.")
+                return 
+
             resultado = self.controlador_inventario.insertar_inventario(
                 producto, cantidad, fecha, id_categoria, observaciones, id_proveedor
             )
+            
             if resultado:
                 messagebox.showinfo("Éxito", "Producto agregado exitosamente.")
                 self._cargar_inventario()

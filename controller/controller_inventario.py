@@ -17,7 +17,11 @@ class Controlador_inventario:
     def obtener_inventario(self, id_inventario): 
         # Esta función no se usa en la vista, pero la dejamos por si acaso.
         return self.modelo.Select(id_inventario)
-        
+    
+    def verificar_existencia_producto(self, nombre_producto):
+        producto = self.modelo.buscar_por_nombre(nombre_producto)
+        return producto is not None # Si producto no es None, significa que existe.
+    
     def obtener_todo_inventario(self):
         return self.modelo.Select_all()
 

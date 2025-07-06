@@ -86,6 +86,22 @@ class Modelo_inventario(Conexion):
             if cursor:
                 cursor.close()
 
+    def buscar_por_nombre(self, nombre_producto):
+
+        cursor = None
+        try:
+            cursor = self.con.cursor()
+            # Usamos LIMIT 1 porque solo necesitamos saber si existe al menos uno. Es más eficiente.
+            sql = "SELECT * FROM inventario WHERE producto = %s LIMIT 1"
+            cursor.execute(sql, (nombre_producto,))
+            return cursor.fetchone()  # Retorna una tupla si lo encuentra, None si no.
+        except Error as e:
+            print(f"Error en Modelo_inventario.buscar_por_nombre: {e}")
+            return None # En caso de error, asumimos que no existe para no bloquear al usuario.
+        finally:
+            if cursor:
+                cursor.close()
+
     def __del__(self):
         if self.con and self.con.is_connected():
             self.con.close()
