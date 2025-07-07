@@ -47,7 +47,7 @@ class Modelo_proveedor(Conexion):
         cursor = None
         try:
             cursor = self.con.cursor()
-            sql = "SELECT id_proveedor, rif, nombre, telefono, direccion FROM proveedores WHERE rif = %s"
+            sql = "SELECT rif FROM proveedores WHERE rif = %s LIMIT 1" # Solo necesitamos una columna para ser más eficientes
             cursor.execute(sql, (rif,))
             return cursor.fetchone()
         except Error as e:

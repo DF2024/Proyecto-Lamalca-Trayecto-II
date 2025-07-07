@@ -2,23 +2,48 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from model.model_compra import Modelo_compra
-from model.model_inventario import Modelo_inventario # <-- Importamos el modelo de inventario
+from model.model_inventario import Modelo_inventario
+from model.model_cliente import Modelo_cliente 
+from utilis.generador_factura import GeneradorFactura 
 
 class Controlador_compra:
     def __init__(self):
         self.modelo = Modelo_compra()
-        self.modelo_inventario = Modelo_inventario() # <-- Creamos una instancia
+        self.modelo_inventario = Modelo_inventario()
+        self.modelo_cliente = Modelo_cliente()
 
     def registrar_compra(self, id_cliente, id_inventario, cantidad, fecha, total):
-        # 1. Registrar la compra
-        resultado_compra = self.modelo.Insert(id_cliente, id_inventario, cantidad, fecha, total)
+        id_nueva_compra = self.modelo.Insert(id_cliente, id_inventario, cantidad, fecha, total)
+        if id_nueva_compra:
+            self.modelo_inventario.actualizar_stock(id_inventario, -cantidad)
+        return id_nueva_compra
+
+    def generar_factura_venta(self, id_compra):
+        datos_venta_raw = self.modelo.Select_por_id_completo(id_compra)
+        if not datos_venta_raw: return None, "No se encontraron los datos de la venta."
+
+        datos_cliente_raw = self.modelo_cliente.Select_por_id(datos_venta_raw['id_cliente'])
+        if not datos_cliente_raw: return None, "No se encontraron los datos del cliente."
+
+        datos_venta = {
+            'id_compra': datos_venta_raw['id_compra'],
+            'fecha': datos_venta_raw['fecha'].strftime('%d/%m/%Y'),
+            'producto': datos_venta_raw['nombre_producto'],
+            'cantidad': datos_venta_raw['cantidad'],
+            'total': float(datos_venta_raw['total'])
+        }
         
-        if resultado_compra:
-            # 2. Si la compra fue exitosa, descontar del stock
-            # Usamos una función que tendremos que crear en el modelo de inventario
-            self.modelo_inventario.actualizar_stock(id_inventario, -cantidad) # Usamos negativo para restar
+        datos_cliente = {
+            'nombre_completo': datos_cliente_raw['nombre_completo'],
+            'cedula': datos_cliente_raw['cedula']
+        }
         
-        return resultado_compra
+        try:
+            generador = GeneradorFactura(datos_venta, datos_cliente)
+            path_pdf = generador.generar_pdf()
+            return path_pdf, "Factura generada exitosamente."
+        except Exception as e:
+            return None, f"Error al generar el PDF: {e}"
 
     def obtener_todas_las_compras(self):
         return self.modelo.Select_all()
@@ -52,3 +77,43 @@ class Controlador_compra:
 
         # 3. Ahora sí, eliminamos el registro de la compra
         return self.modelo.Delete(id_compra)
+    
+    # <<-- NUEVA FUNCIÓN PARA GENERAR LA FACTURA -->>
+    def generar_factura_venta(self, id_compra):
+        """
+        Orquesta la creación de un PDF para una venta específica.
+        """
+        # 1. Obtener los datos completos de la venta
+        datos_venta_raw = self.modelo.Select_por_id_completo(id_compra) # Necesitaremos crear esta función
+        if not datos_venta_raw:
+            return None, "No se encontraron los datos de la venta."
+
+        # 2. Obtener los datos completos del cliente
+        id_cliente = datos_venta_raw['id_cliente']
+        datos_cliente_raw = self.modelo_cliente.Select_por_id(id_cliente) # Necesitaremos esta función
+        if not datos_cliente_raw:
+            return None, "No se encontraron los datos del cliente."
+
+        # 3. Formatear los datos para el generador de PDF
+        datos_venta_limpios = {
+            'id_compra': datos_venta_raw['id_compra'],
+            'fecha': datos_venta_raw['fecha'].strftime('%d/%m/%Y'),
+            'producto': datos_venta_raw['nombre_producto'],
+            'cantidad': datos_venta_raw['cantidad'],
+            'total': float(datos_venta_raw['total'])
+        }
+        
+        datos_cliente_limpios = {
+            'nombre_completo': datos_cliente_raw['nombre_completo'],
+            'cedula': datos_cliente_raw['cedula'],
+            'telefono': datos_cliente_raw.get('telefono'), # Usamos .get por si es opcional
+            'direccion': datos_cliente_raw.get('direccion')
+        }
+        
+        # 4. Llamar al generador de PDF
+        try:
+            generador = GeneradorFactura(datos_venta_limpios, datos_cliente_limpios)
+            path_pdf = generador.generar_pdf()
+            return path_pdf, "Factura generada exitosamente."
+        except Exception as e:
+            return None, f"Error al generar el PDF: {e}"

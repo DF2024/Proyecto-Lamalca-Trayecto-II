@@ -48,6 +48,16 @@ class Modelo_cliente(Conexion):
         finally:
             if cursor:
                 cursor.close()
+    
+    def Select_por_id(self, id_cliente):
+        cursor = None
+        try:
+            cursor = self.con.cursor(dictionary=True)
+            sql = "SELECT *, CONCAT(nombre, ' ', apellido) as nombre_completo FROM clientes WHERE id_cliente = %s"
+            cursor.execute(sql, (id_cliente,))
+            return cursor.fetchone()
+        finally:
+            if cursor: cursor.close()
 
     def Select_all(self):
         cursor = None

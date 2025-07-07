@@ -23,13 +23,15 @@ class Modelo_compra(Conexion):
             '''
             cursor.execute(sql, (id_cliente, id_inventario, cantidad, fecha, total))
             self.con.commit()
-            return cursor.rowcount
+            return cursor.lastrowid  # Devuelve el ID del último registro insertado
         except Error as e:
             print(f"Error al insertar compra: {e}")
             return 0
         finally:
             if cursor:
                 cursor.close()
+
+    
 
     def Select_all(self):
         cursor = None
@@ -56,15 +58,20 @@ class Modelo_compra(Conexion):
                 cursor.close()
     
     # <<-- NUEVO: Función para obtener una compra específica, útil para devoluciones -->>
-    def Select_por_id(self, id_compra):
+    def Select_por_id(self, id_cliente):
+        """
+        Selecciona un cliente usando su ID primario (id_cliente).
+        Devuelve los datos como un diccionario.
+        """
         cursor = None
         try:
-            cursor = self.con.cursor()
-            sql = "SELECT id_inventario, cantidad FROM compras WHERE id_compra = %s"
-            cursor.execute(sql, (id_compra,))
+            cursor = self.con.cursor(dictionary=True)
+            # La consulta ahora busca por el ID primario de la tabla
+            sql = "SELECT *, CONCAT(nombre, ' ', apellido) as nombre_completo FROM clientes WHERE id_cliente = %s"
+            cursor.execute(sql, (id_cliente,))
             return cursor.fetchone()
         except Error as e:
-            print(f"Error al seleccionar compra por ID: {e}")
+            print(f"Error en Modelo_cliente.Select_por_id: {e}")
             return None
         finally:
             if cursor:
@@ -105,6 +112,21 @@ class Modelo_compra(Conexion):
         finally:
             if cursor:
                 cursor.close()
+
+    def Select_por_id_completo(self, id_compra):
+        cursor = None
+        try:
+            cursor = self.con.cursor(dictionary=True)
+            sql = """
+                SELECT co.*, inv.producto AS nombre_producto
+                FROM compras co
+                JOIN inventario inv ON co.id_inventario = inv.id_inventario
+                WHERE co.id_compra = %s
+            """
+            cursor.execute(sql, (id_compra,))
+            return cursor.fetchone()
+        finally:
+            if cursor: cursor.close()
 
     def __del__(self):
         if self.con and self.con.is_connected():

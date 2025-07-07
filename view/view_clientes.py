@@ -226,9 +226,8 @@ class ClienteView(tk.Toplevel):
             return None
 
         if correo and not re.match(r"[^@]+@[^@]+\.[^@]+", correo):
-             messagebox.showwarning("Correo Inválido", "Por favor, ingrese una dirección de correo válida.")
-             return None
-             
+            messagebox.showwarning("Correo Inválido", "Por favor, ingrese una dirección de correo válida.")
+            return None
         return True
 
     def _agregar_cliente(self):

@@ -181,9 +181,10 @@ class ProveedorView(tk.Toplevel):
             return None
 
         # Validación simple para RIF (puede ser más compleja según el país)
-        if not (rif.isalnum() and len(rif) > 5):
-            messagebox.showwarning("Dato Inválido", "El RIF debe ser alfanumérico y tener al menos 6 caracteres.")
+        if not (rif.isdigit() and len(rif) > 5):
+            messagebox.showwarning("Dato Inválido", "El RIF debe ser numerico y tener al menos 6 caracteres.")
             return None
+
 
         if telefono and not telefono.isdigit():
             messagebox.showwarning("Dato Inválido", "El teléfono debe contener solo números.")
@@ -196,10 +197,10 @@ class ProveedorView(tk.Toplevel):
 
         rif = self.e_rif.get().strip()
         
-        # Asumiendo que tienes una función para verificar duplicados en el controlador
-        # if self.controlador.verificar_existencia_rif(rif):
-        #     messagebox.showerror("Error de Duplicado", f"El RIF '{rif}' ya se encuentra registrado.")
-        #     return
+        #Asumiendo que tienes una función para verificar duplicados en el controlador
+        if self.controlador.verificar_existencia_rif(rif):
+            messagebox.showerror("Error de Duplicado", f"El RIF '{rif}' ya se encuentra registrado.")
+            return
 
         nombre = self.e_nombre.get().strip()
         telefono = self.e_telefono.get().strip()

@@ -10,6 +10,7 @@ class Controlador_proveedor:
 
     def insertar_proveedor(self, rif, nombre, telefono, direccion):
         return self.modelo.Insert(rif, nombre, telefono, direccion)
+    
 
     def obtener_todos_los_proveedores(self):
         return self.modelo.Select_all()
@@ -19,6 +20,10 @@ class Controlador_proveedor:
 
     def actualizar_proveedor_por_rif(self, rif, nombre, telefono, direccion):
         return self.modelo.Update_por_rif(rif, nombre, telefono, direccion)
+    
+    def verificar_existencia_rif(self, rif):
+        proveedor = self.modelo.Select_por_rif(rif)
+        return proveedor is not None
 
     def eliminar_proveedor_por_rif(self, rif):
         return self.modelo.Delete_por_rif(rif)
