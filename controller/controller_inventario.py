@@ -23,9 +23,15 @@ class Controlador_inventario:
         return producto_existente is not None
 
     
-    def verificar_existencia_producto(self, nombre_producto):
-        producto = self.modelo.buscar_por_nombre(nombre_producto)
-        return producto is not None # Si producto no es None, significa que existe.
+    def verificar_existencia_producto(self, nombre_producto, id_a_excluir=None):
+        """
+        Llama al modelo para verificar si un producto ya existe por su nombre.
+        Acepta un ID opcional para excluirlo de la búsqueda (útil al actualizar).
+        Retorna True si existe, False si no.
+        """
+        # Pasa ambos argumentos al modelo. Si id_a_excluir es None, el modelo lo manejará.
+        producto_existente = self.modelo.buscar_por_nombre(nombre_producto, id_a_excluir)
+        return producto_existente is not None
     
     def obtener_todo_inventario(self):
         return self.modelo.Select_all()

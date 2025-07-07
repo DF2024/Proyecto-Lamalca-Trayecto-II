@@ -1,5 +1,4 @@
 # Archivo: model/model_compra.py
-
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -11,19 +10,17 @@ class Modelo_compra(Conexion):
         super().__init__()
         self.con = self.get_conexion()
 
-    # <<-- CORREGIDO: Los nombres de las columnas ahora son id_inventario e id_cliente -->>
     def Insert(self, id_cliente, id_inventario, cantidad, fecha, total):
         cursor = None
         try:
             cursor = self.con.cursor()
-            # La tabla compras ahora se relaciona con inventario
             sql = '''
                 INSERT INTO compras (id_cliente, id_inventario, cantidad, fecha, total)
                 VALUES (%s, %s, %s, %s, %s)
             '''
             cursor.execute(sql, (id_cliente, id_inventario, cantidad, fecha, total))
             self.con.commit()
-            return cursor.lastrowid  # Devuelve el ID del último registro insertado
+            return cursor.lastrowid
         except Error as e:
             print(f"Error al insertar compra: {e}")
             return 0
@@ -31,13 +28,10 @@ class Modelo_compra(Conexion):
             if cursor:
                 cursor.close()
 
-    
-
     def Select_all(self):
         cursor = None
         try:
             cursor = self.con.cursor()
-            # <<-- CORREGIDO: JOIN con la tabla 'inventario' en lugar de 'productos' -->>
             sql = """
                 SELECT 
                     co.id_compra, cl.cedula, CONCAT(cl.nombre, ' ', cl.apellido) AS nombre_cliente,
@@ -57,27 +51,24 @@ class Modelo_compra(Conexion):
             if cursor:
                 cursor.close()
     
-    # <<-- NUEVO: Función para obtener una compra específica, útil para devoluciones -->>
-    def Select_por_id(self, id_cliente):
-        """
-        Selecciona un cliente usando su ID primario (id_cliente).
-        Devuelve los datos como un diccionario.
-        """
+    def Select_por_id_simple(self, id_compra):
+        """Obtiene solo el id_inventario y la cantidad de una compra."""
+        con = self.get_conexion()
         cursor = None
         try:
-            cursor = self.con.cursor(dictionary=True)
-            # La consulta ahora busca por el ID primario de la tabla
-            sql = "SELECT *, CONCAT(nombre, ' ', apellido) as nombre_completo FROM clientes WHERE id_cliente = %s"
-            cursor.execute(sql, (id_cliente,))
+            cursor = con.cursor()
+            sql = "SELECT id_inventario, cantidad FROM compras WHERE id_compra = %s"
+            cursor.execute(sql, (id_compra,))
             return cursor.fetchone()
         except Error as e:
-            print(f"Error en Modelo_cliente.Select_por_id: {e}")
+            print(f"Error en Modelo_compra.Select_por_id_simple: {e}")
             return None
         finally:
-            if cursor:
-                cursor.close()
+            if cursor: cursor.close()
+            if con and con.is_connected(): con.close()
 
-    # <<-- CORREGIDO: El update también debe referenciar id_inventario -->>
+    
+
     def Update(self, id_compra, id_cliente, id_inventario, cantidad, fecha, total):
         cursor = None
         try:
@@ -129,5 +120,6 @@ class Modelo_compra(Conexion):
             if cursor: cursor.close()
 
     def __del__(self):
-        if self.con and self.con.is_connected():
-            self.con.close()
+        # Este método puede causar problemas si se cierran conexiones prematuramente.
+        # Es mejor manejar la conexión explícitamente.
+        pass

@@ -1,58 +1,129 @@
-# dashboard_admin.py
+# view/admin_dashboard.py
 import tkinter as tk
+from tkinter import messagebox
 import customtkinter as ctk
-from tkinter import ttk, messagebox
-from view.view_proveedor import ProveedorView
-from view.view_producto import ProductoView
-from view.view_categoria import CategoriaView
+import os
+import sys
 
-class AdminDashboard(tk.Toplevel):
+# --- Dependencia para iconos ---
+try:
+    from PIL import Image
+    iconos_disponibles = True
+except ImportError:
+    iconos_disponibles = False
+# ------------------------------
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Importamos todas las vistas que el admin puede abrir
+from view.view_proveedor import ProveedorView
+from view.view_inventario import InventarioView
+from view.view_categoria import CategoriaView
+from view.view_compra import CompraView
+from view.view_cierre_caja import CierreCajaView
+
+class AdminDashboard(ctk.CTkToplevel):
     def __init__(self, master=None):
         super().__init__(master)
-        self.title("Dashboard - Administrador")
-        self.geometry("700x500")
+        self.title("Panel de Administración - Sistema La Malca")
+        self.geometry("900x600")
+        self.resizable(False, False)
+        
+        # Centrar la ventana al iniciar
+        self.after(200, lambda: self.eval('tk::PlaceWindow . center'))
 
-        ctk.set_appearance_mode("light") 
-        ctk.set_default_color_theme("green")  
+        # --- Tema Oscuro ---
+        # No es necesario setearlo aquí si ya se hizo en el login, pero no hace daño
+        ctk.set_appearance_mode("dark")
+        ctk.set_default_color_theme("blue")
 
+        self.iconos = {}
+        if iconos_disponibles:
+            self._cargar_iconos()
+        
+        self._construir_interfaz()
 
-        self.master.eval(f'tk::PlaceWindow {self.winfo_pathname(self.winfo_id())} center')
+    def _cargar_iconos(self):
+        icon_path = "icons"
+        if not os.path.isdir(icon_path): return
 
-        style = ttk.Style(self)
-        style.configure("Dashboard.TButton", font=("Arial", 12), padding=10)
+        icon_files = {
+            "inventario": "inventory_icon_light.png",
+            "proveedores": "suppliers_icon_light.png",
+            "categorias": "category_icon_light.png",
+            "ventas": "sales_icon_light.png",
+            "caja": "cashier_icon_light.png",
+            "logout": "logout_icon_light.png"
+        }
+        for name, filename in icon_files.items():
+            try:
+                path = os.path.join(icon_path, filename)
+                image_pil = Image.open(path)
+                self.iconos[name] = ctk.CTkImage(light_image=image_pil, dark_image=image_pil, size=(48, 48))
+            except Exception as e:
+                print(f"Advertencia: No se pudo cargar el icono '{filename}': {e}")
+    
+    def _construir_interfaz(self):
+        # --- Frame principal con padding ---
+        main_frame = ctk.CTkFrame(self, fg_color="transparent")
+        main_frame.pack(padx=20, pady=20, fill="both", expand=True)
+        
+        # --- Cabecera ---
+        header_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        header_frame.pack(fill="x", pady=(10, 30))
+        
+        ctk.CTkLabel(header_frame, text="Panel de Administración", font=ctk.CTkFont(size=32, weight="bold")).pack()
+        ctk.CTkLabel(header_frame, text="Seleccione una opción para comenzar a gestionar", font=ctk.CTkFont(size=14), text_color="#a0a0a0").pack()
 
-        main_frame = ttk.Frame(self, padding="30")
-        main_frame.pack(expand=True, fill="both")
-        main_frame.place(relx=0.5, rely=0.5, anchor="center")
-
-        ttk.Label(main_frame, text="Panel de Administración", font=("Arial", 24, "bold")).pack(pady=(0, 20))
-
-        # Opciones para el Administrador
-        botones = [
-            ("Gestionar Proveedores", ProveedorView),
-            ("Gestionar Productos", ProductoView),
-            ("Gestionar Categorías", CategoriaView)
+        # --- Cuadrícula de Botones (Tarjetas de Módulos) ---
+        grid_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        grid_frame.pack(fill="both", expand=True)
+        
+        # Configurar la cuadrícula para que se centre y expanda
+        grid_frame.grid_columnconfigure((0, 1, 2), weight=1)
+        grid_frame.grid_rowconfigure((0, 1), weight=1)
+        
+        # --- Opciones del Dashboard ---
+        opciones = [
+            {"texto": "Gestionar Inventario", "icono": self.iconos.get("inventario"), "comando": lambda: self._abrir_ventana(InventarioView)},
+            {"texto": "Gestionar Proveedores", "icono": self.iconos.get("proveedores"), "comando": lambda: self._abrir_ventana(ProveedorView)},
+            {"texto": "Gestionar Categorías", "icono": self.iconos.get("categorias"), "comando": lambda: self._abrir_ventana(CategoriaView)},
         ]
-
-        for texto, VentanaClase in botones:
-            ttk.Button(main_frame, text=texto,
-                    command=lambda vc=VentanaClase: self._abrir_ventana(vc),
-                    style="Dashboard.TButton", width=50).pack(fill="x", pady=5)
-
-        logout_button = ctk.CTkButton(main_frame, text="Cerrar Sesión", font=("Arial", 15, "bold"), command=self.cerrar_sesion)
-        logout_button.pack(side="bottom", pady=(20, 0))
-
+        
+        # Crear los botones en la cuadrícula
+        for i, opcion in enumerate(opciones):
+            fila = i // 3
+            columna = i % 3
+            
+            # Tarjeta/Frame para cada botón
+            card = ctk.CTkFrame(grid_frame, corner_radius=15, fg_color="#2b2b2b")
+            card.grid(row=fila, column=columna, padx=15, pady=15, sticky="nsew")
+            
+            # Botón dentro de la tarjeta
+            btn = ctk.CTkButton(card, text=opcion["texto"], image=opcion["icono"], 
+                                font=ctk.CTkFont(size=14, weight="bold"),
+                                compound="top", fg_color="transparent",
+                                hover_color="#3b3b3b", command=opcion["comando"],
+                                text_color_disabled="#777777")
+            btn.pack(expand=True, fill="both", padx=10, pady=10)
+        
+        # --- Botón de Cerrar Sesión ---
+        logout_button = ctk.CTkButton(main_frame, text="Cerrar Sesión", image=self.iconos.get("logout"),
+                                      compound="left", command=self.cerrar_sesion,
+                                      fg_color="#c0392b", hover_color="#e74c3c", # Tonos de rojo
+                                      font=ctk.CTkFont(size=12, weight="bold"), height=35)
+        logout_button.pack(side="bottom", anchor="se", pady=(20, 0), padx=(0, 10))
 
     def _abrir_ventana(self, VentanaClase):
-        self.withdraw()
+        self.withdraw() # Ocultamos el dashboard
         ventana_gestion = VentanaClase(master=self)
+        # Cuando se cierre la ventana de gestión, mostramos el dashboard de nuevo
         ventana_gestion.protocol("WM_DELETE_WINDOW", lambda: self._al_cerrar_ventana_gestion(ventana_gestion))
     
     def _al_cerrar_ventana_gestion(self, ventana):
         ventana.destroy()
-        self.deiconify()
+        self.deiconify() # Vuelve a mostrar el dashboard
 
     def cerrar_sesion(self):
         if messagebox.askyesno("Cerrar Sesión", "¿Está seguro de que desea cerrar la sesión?"):
             self.destroy()
-            self.master.deiconify()
+            self.master.deiconify() # Muestra la ventana de login

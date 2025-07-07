@@ -1,18 +1,16 @@
-# view/view_compra.py
+# Archivo: view/view_compra.py
 import tkinter as tk
 from tkinter import messagebox, ttk, TclError
 from tkcalendar import DateEntry
 import sys
 import os
-import webbrowser # <-- Para abrir el PDF automáticamente
+import webbrowser
 
-# --- Dependencias de estilo ---
 try:
     from PIL import Image, ImageTk
     iconos_disponibles = True
 except ImportError:
     iconos_disponibles = False
-# ------------------------------
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from controller.controller_compra import Controlador_compra
@@ -34,10 +32,8 @@ class CompraView(tk.Toplevel):
 
         self.configure(bg=self.bg_color)
         
-        # --- Estilos ttk ---
         style = ttk.Style(self)
         style.theme_use('clam')
-        
         style.configure(".", background=self.bg_color, foreground=self.fg_color, fieldbackground=self.entry_bg, bordercolor="#555555")
         style.configure("TLabel", background=self.bg_color, foreground=self.fg_color)
         style.configure("TButton", padding=6, relief="flat", background="#4a4a4a", foreground=self.fg_color, font=('Arial', 10))
@@ -49,12 +45,10 @@ class CompraView(tk.Toplevel):
         style.configure("TLabelframe", background=self.bg_color, bordercolor="#555555")
         style.configure("TLabelframe.Label", background=self.bg_color, foreground=self.fg_color, font=('Arial', 11, 'bold'))
 
-        # Controladores
         self.controlador_compra = Controlador_compra()
         self.controlador_cliente = Controlador_cliente()
         self.controlador_inventario = Controlador_inventario()
 
-        # Datos internos
         self.inventario_data = {}
         self.id_cliente_seleccionado = None
         self.id_compra_seleccionada = None
@@ -92,7 +86,6 @@ class CompraView(tk.Toplevel):
         frame_form.columnconfigure(3, weight=1)
         frame_form.columnconfigure(5, weight=1)
 
-        # Fila 1: Cliente
         ttk.Label(frame_form, text="Cédula Cliente:").grid(row=0, column=0, padx=5, pady=8, sticky="w")
         self.entry_cedula = ttk.Entry(frame_form, font=('Arial', 10))
         self.entry_cedula.grid(row=0, column=1, padx=5, pady=8, sticky="ew")
@@ -103,7 +96,6 @@ class CompraView(tk.Toplevel):
         self.label_nombre_cliente = ttk.Label(frame_form, text="<-- Busque un cliente", font=('Arial', 10, 'italic'))
         self.label_nombre_cliente.grid(row=0, column=3, columnspan=3, padx=5, pady=8, sticky="w")
 
-        # Fila 2: Producto, Cantidad y Stock
         ttk.Label(frame_form, text="Producto:").grid(row=1, column=0, padx=5, pady=8, sticky="w")
         self.combo_producto = ttk.Combobox(frame_form, state="readonly", font=('Arial', 10))
         self.combo_producto.grid(row=1, column=1, columnspan=2, padx=5, pady=8, sticky="ew")
@@ -119,7 +111,6 @@ class CompraView(tk.Toplevel):
         self.label_stock = ttk.Label(frame_form, text="0", font=("Arial", 10, "bold"))
         self.label_stock.grid(row=1, column=6, padx=5, pady=8, sticky="w")
         
-        # Fila 3: Fecha y Total
         ttk.Label(frame_form, text="Fecha:").grid(row=2, column=0, padx=5, pady=8, sticky="w")
         self.entry_fecha = DateEntry(frame_form, date_pattern='yyyy-mm-dd', state="readonly",
                                      background=self.entry_bg, foreground=self.fg_color, bordercolor=self.bg_color,
@@ -132,7 +123,6 @@ class CompraView(tk.Toplevel):
         self.label_total = ttk.Label(frame_form, text="0.00", font=("Arial", 14, "bold"), foreground="#4CAF50")
         self.label_total.grid(row=2, column=6, padx=5, pady=8, sticky="w")
 
-        # Frame de Botones de Acción
         botones_frame = tk.Frame(main_frame, bg=self.bg_color)
         botones_frame.pack(pady=20)
         
@@ -143,7 +133,6 @@ class CompraView(tk.Toplevel):
         ttk.Button(botones_frame, text="Eliminar Venta", image=self.iconos.get('delete'), compound=tk.LEFT, command=self._eliminar_compra).pack(side=tk.LEFT, **btn_params)
         ttk.Button(botones_frame, text="Limpiar", image=self.iconos.get('clear'), compound=tk.LEFT, command=self._limpiar_formulario).pack(side=tk.LEFT, **btn_params)
 
-        # Frame de la Tabla de Compras
         frame_tabla = ttk.LabelFrame(main_frame, text="Historial de Ventas", padding=(15, 10))
         frame_tabla.pack(pady=10, fill="both", expand=True)
         
@@ -171,9 +160,11 @@ class CompraView(tk.Toplevel):
         try:
             productos_inventario = self.controlador_inventario.obtener_todo_inventario()
             for item in productos_inventario:
-                id_inv, nombre, stock, precio, *_ = item
+                # <<-- MEJORADO: Asumimos un orden de columnas del inventario
+                # id, nombre, stock, precio_venta, ... otras columnas
+                id_inv, nombre, stock, _, _, _, _, precio_venta = item[:8]
                 if int(stock) > 0:
-                    self.inventario_data[id_inv] = {'nombre': nombre, 'precio': float(precio), 'stock': int(stock)}
+                    self.inventario_data[id_inv] = {'nombre': nombre, 'precio': float(precio_venta), 'stock': int(stock)}
                     nombres_prod.append(nombre)
             self.combo_producto['values'] = nombres_prod
         except Exception as e:
@@ -255,35 +246,56 @@ class CompraView(tk.Toplevel):
         if self.tabla_compras.selection():
             self.tabla_compras.selection_remove(self.tabla_compras.selection()[0])
             
-    def _registrar_compra(self):
+    def _obtener_datos_formulario(self):
+        # <<-- MEJORADO: Esta función ahora solo valida y extrae datos para usarse en registrar y actualizar.
         if not self.id_cliente_seleccionado:
-            messagebox.showerror("Error", "Debe buscar y seleccionar un cliente válido.")
-            return
-            
+            messagebox.showerror("Error de Cliente", "Debe buscar y seleccionar un cliente válido.")
+            return None
+        
         nombre_prod = self.combo_producto.get()
         if not nombre_prod:
-            messagebox.showerror("Error", "Debe seleccionar un producto.")
-            return
-            
-        id_inventario, stock_disponible = None, 0
+            messagebox.showerror("Error de Producto", "Debe seleccionar un producto.")
+            return None
+
+        # Busca el ID de inventario correspondiente al nombre del producto
+        id_inventario, stock_disponible, precio = None, 0, 0.0
         for inv_id, data in self.inventario_data.items():
             if data['nombre'] == nombre_prod:
                 id_inventario = inv_id
                 stock_disponible = data['stock']
+                precio = data['precio']
                 break
+        
+        if id_inventario is None:
+            messagebox.showerror("Error Interno", "No se pudo encontrar el ID del producto seleccionado.")
+            return None
 
         try:
             cantidad = int(self.var_cantidad.get())
             if cantidad <= 0: raise ValueError("La cantidad debe ser positiva.")
-            if cantidad > stock_disponible:
-                messagebox.showerror("Stock Insuficiente", f"No hay suficiente stock para '{nombre_prod}'.\nDisponible: {stock_disponible}")
-                return
-        except ValueError as e:
-            messagebox.showerror("Error de Cantidad", str(e) if str(e) else "La cantidad debe ser un número entero mayor que cero.")
-            return
+        except (ValueError, TclError):
+            messagebox.showerror("Error de Cantidad", "La cantidad debe ser un número entero mayor que cero.")
+            return None
         
-        fecha = self.entry_fecha.get_date().strftime('%Y-%m-%d')
-        total = float(self.label_total.cget("text"))
+        try:
+            fecha = self.entry_fecha.get_date().strftime('%Y-%m-%d')
+        except AttributeError:
+             messagebox.showerror("Error de Fecha", "Debe seleccionar una fecha válida.")
+             return None
+
+        total = cantidad * precio
+
+        return id_inventario, cantidad, stock_disponible, fecha, total
+
+    def _registrar_compra(self):
+        datos = self._obtener_datos_formulario()
+        if not datos: return
+
+        id_inventario, cantidad, stock_disponible, fecha, total = datos
+
+        if cantidad > stock_disponible:
+            messagebox.showerror("Stock Insuficiente", f"No hay suficiente stock para este producto.\nDisponible: {stock_disponible}")
+            return
 
         id_nueva_compra = self.controlador_compra.registrar_compra(
             self.id_cliente_seleccionado, id_inventario, cantidad, fecha, total
@@ -291,20 +303,9 @@ class CompraView(tk.Toplevel):
 
         if id_nueva_compra:
             messagebox.showinfo("Éxito", "Venta registrada correctamente.")
-
-            # --- PREGUNTAR PARA GENERAR FACTURA ---
             if messagebox.askyesno("Generar Factura", "¿Desea generar la factura para esta venta?"):
-                path_pdf, mensaje = self.controlador_compra.generar_factura_venta(id_nueva_compra)
-                if path_pdf:
-                    messagebox.showinfo("Factura Generada", f"{mensaje}\nEl archivo se guardó en: {path_pdf}")
-                    try:
-                        webbrowser.open(os.path.realpath(path_pdf))
-                    except Exception as e:
-                        messagebox.showwarning("No se pudo abrir", f"No se pudo abrir el PDF automáticamente.\nError: {e}")
-                else:
-                    messagebox.showerror("Error de Factura", mensaje)
+                self._generar_y_abrir_factura(id_nueva_compra)
             
-            # Limpieza final
             self._cargar_productos_combobox()
             self._cargar_compras_tabla()
             self._limpiar_formulario()
@@ -316,6 +317,7 @@ class CompraView(tk.Toplevel):
         if not item_seleccionado: return
         
         valores = self.tabla_compras.item(item_seleccionado, 'values')
+        if not valores: return
         
         self.id_compra_seleccionada = valores[0]
         self.entry_cedula.delete(0, "end"); self.entry_cedula.insert(0, valores[1])
@@ -327,20 +329,58 @@ class CompraView(tk.Toplevel):
         self._actualizar_info_producto()
         
     def _actualizar_compra(self):
-        # ... (La lógica de esta función se mantiene como en la respuesta anterior) ...
-        # ... (Asegúrate de tener la versión robusta que maneja la devolución de stock) ...
-        pass
+        if not self.id_compra_seleccionada:
+            messagebox.showerror("Error", "Debe seleccionar una venta de la lista para actualizar.")
+            return
+        
+        datos = self._obtener_datos_formulario()
+        if not datos: return
+
+        id_inventario_nuevo, cantidad_nueva, _, fecha, total_nuevo = datos
+        
+        resultado = self.controlador_compra.actualizar_compra(
+            self.id_compra_seleccionada, self.id_cliente_seleccionado, id_inventario_nuevo, cantidad_nueva, fecha, total_nuevo
+        )
+        if resultado:
+            messagebox.showinfo("Éxito", "Venta actualizada correctamente.")
+            self._cargar_productos_combobox()
+            self._cargar_compras_tabla()
+            self._limpiar_formulario()
+        else:
+            messagebox.showerror("Error", "No se pudo actualizar la venta.")
 
     def _eliminar_compra(self):
-        # ... (La lógica de esta función se mantiene como en la respuesta anterior) ...
-        # ... (Asegúrate de tener la versión robusta que maneja la devolución de stock) ...
-        pass
+        if not self.id_compra_seleccionada:
+            messagebox.showerror("Error", "Debe seleccionar una venta de la lista para eliminar.")
+            return
+
+        if messagebox.askyesno("Confirmar Eliminación", f"¿Está seguro de eliminar la venta ID {self.id_compra_seleccionada}?\nEl stock del producto será devuelto al inventario.", icon='warning'):
+            resultado = self.controlador_compra.eliminar_compra(self.id_compra_seleccionada)
+            if resultado:
+                messagebox.showinfo("Éxito", "Venta eliminada y stock devuelto al inventario.")
+                self._cargar_productos_combobox()
+                self._cargar_compras_tabla()
+                self._limpiar_formulario()
+            else:
+                messagebox.showerror("Error", "No se pudo eliminar la venta.")
+
+    def _generar_y_abrir_factura(self, id_compra):
+        path_pdf, mensaje = self.controlador_compra.generar_factura_venta(id_compra)
+        if path_pdf:
+            messagebox.showinfo("Factura Generada", f"{mensaje}\nEl archivo se guardó en: {path_pdf}")
+            try:
+                webbrowser.open(os.path.realpath(path_pdf))
+            except Exception as e:
+                messagebox.showwarning("No se pudo abrir", f"No se pudo abrir el PDF automáticamente.\nError: {e}")
+        else:
+            messagebox.showerror("Error de Factura", mensaje)
 
     def volver_al_dashboard(self):
         self.destroy()
         if self.master:
             self.master.deiconify()
 
+# El resto del código `if __name__ == '__main__'` está bien.
 if __name__ == '__main__':
     root = tk.Tk()
     root.withdraw()
