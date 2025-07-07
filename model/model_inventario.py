@@ -1,4 +1,3 @@
-# Archivo: model/model_inventario.py
 import os 
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),'..')))
@@ -8,9 +7,121 @@ from mysql.connector import Error
 class Modelo_inventario(Conexion):
     def __init__(self):
         super().__init__()
-        # <<-- MEJORADO: La conexión se obtiene solo cuando se necesita, no en el init -->>
+        # La conexión se obtiene solo cuando se necesita.
 
-    # --- Métodos de gestión de transacciones ---
+    # --- Operaciones CRUD (Crear, Leer, Actualizar, Borrar) ---
+    def Insert(self, producto, cantidad, precio_unitario, fecha_ultima_entrada, categoria, observaciones, proveedor):
+        con = None
+        cursor = None
+        try:
+            con = self.get_conexion()
+            cursor = con.cursor()
+            sql = """INSERT INTO inventario (producto, cantidad_actual, precio_unitario, fecha_ultima_entrada, categoria, observaciones, proveedor)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+            cursor.execute(sql, (producto, cantidad, precio_unitario, fecha_ultima_entrada, categoria, observaciones, proveedor))
+            con.commit()
+            return True
+        except Error as e:
+            print(f"Error al insertar en inventario: {e}")
+            return False
+        finally:
+            if cursor: cursor.close()
+            if con: con.close()
+
+    def Select_all(self):
+        con = None
+        cursor = None
+        try:
+            con = self.get_conexion()
+            cursor = con.cursor()
+            # La tabla en la BD se llama 'inventario' y los campos deben coincidir
+            sql = """SELECT id_inventario, producto, cantidad_actual, precio_unitario, 
+                            fecha_ultima_entrada, observaciones, categoria, proveedor 
+                     FROM inventario"""
+            cursor.execute(sql)
+            resultado = cursor.fetchall()
+            return resultado
+        except Error as e:
+            print(f"Error al seleccionar todo el inventario: {e}")
+            return []
+        finally:
+            if cursor: cursor.close()
+            if con: con.close()
+            
+    def Update(self, id_inventario, producto, cantidad, precio_unitario, fecha_ultima_entrada, categoria, observaciones, proveedor):
+        con = None
+        cursor = None
+        try:
+            con = self.get_conexion()
+            cursor = con.cursor()
+            sql = """UPDATE inventario SET 
+                        producto = %s, 
+                        cantidad_actual = %s, 
+                        precio_unitario = %s, 
+                        fecha_ultima_entrada = %s, 
+                        categoria = %s, 
+                        observaciones = %s, 
+                        proveedor = %s 
+                     WHERE id_inventario = %s"""
+            cursor.execute(sql, (producto, cantidad, precio_unitario, fecha_ultima_entrada, categoria, observaciones, proveedor, id_inventario))
+            con.commit()
+            return cursor.rowcount > 0 # Retorna True si se actualizó al menos 1 fila
+        except Error as e:
+            print(f"Error al actualizar inventario: {e}")
+            return False
+        finally:
+            if cursor: cursor.close()
+            if con: con.close()
+
+    def Delete(self, id_inventario):
+        con = None
+        cursor = None
+        try:
+            con = self.get_conexion()
+            cursor = con.cursor()
+            sql = "DELETE FROM inventario WHERE id_inventario = %s"
+            cursor.execute(sql, (id_inventario,))
+            con.commit()
+            return cursor.rowcount > 0 # Retorna True si se eliminó al menos 1 fila
+        except Error as e:
+            print(f"Error al eliminar de inventario: {e}")
+            # Si hay una restricción de clave foránea (ej: el producto está en una venta), fallará.
+            return False
+        finally:
+            if cursor: cursor.close()
+            if con: con.close()
+            
+    def buscar_por_nombre(self, producto, id_a_excluir=None):
+        """
+        Busca un producto por su nombre, opcionalmente excluyendo un ID.
+        Hace la búsqueda sin distinguir mayúsculas/minúsculas.
+        Retorna el primer resultado encontrado o None si no hay coincidencias.
+        """
+        con = None
+        cursor = None
+        try:
+            con = self.get_conexion()
+            cursor = con.cursor()
+            
+            query_sql = "SELECT id_inventario FROM inventario WHERE LOWER(producto) = LOWER(%s)"
+            params = [producto]
+
+            if id_a_excluir is not None:
+                query_sql += " AND id_inventario != %s"
+                params.append(id_a_excluir)
+            
+            cursor.execute(query_sql, tuple(params))
+            resultado = cursor.fetchone()
+            return resultado
+
+        except Error as e:
+            print(f"Error al buscar producto por nombre: {e}")
+            return None
+        finally:
+            if cursor: cursor.close()
+            if con: con.close()
+
+    # --- Métodos de gestión de transacciones (ya estaban bien) ---
     def iniciar_transaccion(self):
         try:
             self.con = self.get_conexion()
@@ -32,17 +143,12 @@ class Modelo_inventario(Conexion):
             print("[TRANSACCIÓN INVENTARIO] Revertida (Rollback).")
             self.con.close()
 
-    # --- Operaciones de datos ---
     def obtener_stock_actual(self, id_inventario):
-        """Obtiene el stock actual de un producto, usando la conexión de la transacción actual."""
         if not self.con or not self.con.is_connected():
             print("Error: No hay conexión de transacción activa para obtener stock.")
             return None
-        
         cursor = None
         try:
-            # `FOR UPDATE` bloquea la fila para que nadie más la pueda leer o modificar hasta que termine la transacción.
-            # Esto evita "race conditions" y bloqueos.
             sql = "SELECT cantidad_actual FROM inventario WHERE id_inventario = %s FOR UPDATE"
             cursor = self.con.cursor()
             cursor.execute(sql, (id_inventario,))
@@ -52,15 +158,12 @@ class Modelo_inventario(Conexion):
             print(f"Error al obtener stock actual: {e}")
             return None
         finally:
-            if cursor:
-                cursor.close()
+            if cursor: cursor.close()
 
     def actualizar_stock(self, id_inventario, cambio_cantidad):
-        """Actualiza el stock. Debe ser llamado dentro de una transacción iniciada."""
         if not self.con or not self.con.is_connected():
             print("Error: No hay conexión de transacción activa para actualizar stock.")
             return False
-            
         print(f"[STOCK] Preparado cambio para id {id_inventario}: {cambio_cantidad}")
         cursor = None
         try:
@@ -69,22 +172,6 @@ class Modelo_inventario(Conexion):
             cursor.execute(sql, (cambio_cantidad, id_inventario))
             return True
         except Error as e:
-            # No imprimimos el error aquí, se capturará en el controlador que maneja la transacción.
-            raise e # <<-- Re-lanzamos la excepción para que el controlador la capture y haga rollback.
+            raise e
         finally:
-            if cursor:
-                cursor.close()
-
-    # Mantenemos las funciones originales por si se usan en otras partes, pero las de transacción son preferibles.
-    def Insert(self, *args): pass
-    def Select_all(self):
-        con = self.get_conexion()
-        cursor = con.cursor()
-        sql = "SELECT *, 10.0 AS precio_venta FROM inventario" # Añadido precio_venta para compatibilidad
-        cursor.execute(sql)
-        resultado = cursor.fetchall()
-        cursor.close()
-        con.close()
-        return resultado
-    def Update(self, *args): pass
-    def Delete(self, *args): pass
+            if cursor: cursor.close()
