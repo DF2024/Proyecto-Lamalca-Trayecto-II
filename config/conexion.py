@@ -1,33 +1,31 @@
-import mysql.connector
-from mysql.connector import Error
+import psycopg2
+from psycopg2 import Error
 
 class Conexion:
     def __init__(self):
         self.__server = 'localhost'
-        self.__user = 'root'
-        self.__pass = ''
-        self.__db = "lamalca_db"
-        self.__port = 3306
-
+        self.__user = 'dandefensor'
+        self.__pass = 'andres123' 
+        self.__db = "lamalca_pg"
+        self.__port = 5432
 
     def get_conexion(self):
-            con = mysql.connector.connect(
+            con = psycopg2.connect(
                 host=self.__server, 
                 user=self.__user, 
                 password=self.__pass, 
-                db=self.__db, 
+                dbname=self.__db,  
                 port=self.__port,
-                auth_plugin='mysql_native_password' 
             )
             return con
-        
 
 
-conecta = Conexion()
-
-try: 
-    con = conecta.get_conexion()
-    if con:
-        print('Conexion exitosa')
-except Error as e:
-    print(e)
+if __name__ == "__main__":
+    conecta = Conexion()
+    try: 
+        con = conecta.get_conexion()
+        if con:
+            print('Conexion exitosa a PostgreSQL')
+            con.close()
+    except Error as e:
+        print(f"Error de conexión: {e}")
