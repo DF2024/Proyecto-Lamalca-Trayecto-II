@@ -20,6 +20,4 @@ Registro y seguimiento de compras.
 
 Roles de usuario: Administrador y empleado, con acceso diferenciado.
 
-Ejecuta la aplicación:
 
-python main.py
