@@ -240,6 +240,8 @@ class ProveedorView(tk.Toplevel):
         else:
             messagebox.showerror("Error de Base de Datos", "No se pudo actualizar el proveedor.")
 
+    # REEMPLAZA TODA LA FUNCIÓN _buscar_proveedor CON ESTA VERSIÓN CORREGIDA
+
     def _buscar_proveedor(self):
         dialog = tk.Toplevel(self)
         dialog.title("Buscar Proveedor por RIF")
@@ -252,27 +254,44 @@ class ProveedorView(tk.Toplevel):
         entry_search.focus_set()
 
         def do_search():
-            rif = entry_search.get().strip()
+            rif_buscado = entry_search.get().strip()
             dialog.destroy()
-            if not rif: return
+            if not rif_buscado:
+                return
+
+            # Buscamos el proveedor en el Treeview
+            item_encontrado = None
+            for item in self.tabla.get_children():
+                valores_fila = self.tabla.item(item)['values']
+                # Comparamos el RIF de la fila (índice 1) con el RIF buscado
+                if str(valores_fila[1]) == rif_buscado:
+                    item_encontrado = item
+                    break
             
-            proveedor = self.controlador.obtener_proveedor_por_rif(rif)
-            if proveedor:
-                self._limpiar_entradas()
-                for item in self.tabla.get_children():
-                    if self.tabla.item(item)['values'][1] == rif:
-                        self.tabla.selection_set(item)
-                        self.tabla.focus(item)
-                        self.tabla.see(item)
-                        break
-                messagebox.showinfo("Proveedor Encontrado", f"Se han cargado los datos de {proveedor[2]}.")
+            if item_encontrado:
+                # Si lo encontramos, lo seleccionamos y mostramos la información
+                self.tabla.selection_set(item_encontrado)
+                self.tabla.focus(item_encontrado)
+                self.tabla.see(item_encontrado) # Asegura que la fila sea visible
+                
+                # Obtenemos el nombre del proveedor desde los valores de la fila (índice 2)
+                nombre_proveedor = self.tabla.item(item_encontrado)['values'][2]
+                messagebox.showinfo("Proveedor Encontrado", f"Se han cargado los datos de '{nombre_proveedor}'.")
             else:
-                messagebox.showwarning("No Encontrado", f"No se encontró un proveedor con el RIF {rif}.")
+                # Si no está en el Treeview, consultamos la BD por si acaso no estuviera cargado
+                proveedor_bd = self.controlador.obtener_proveedor_por_rif(rif_buscado)
+                if proveedor_bd:
+                    messagebox.showinfo("Encontrado en BD", f"El proveedor con RIF {rif_buscado} existe en la base de datos pero no estaba en la vista actual. Refrescando lista...")
+                    self._cargar_proveedores() # Recargamos la tabla
+                    self._buscar_proveedor() # Volvemos a intentar la búsqueda para seleccionarlo
+                else:
+                    messagebox.showwarning("No Encontrado", f"No se encontró un proveedor con el RIF {rif_buscado}.")
 
         btn_frame = tk.Frame(dialog, bg=self.bg_color)
         btn_frame.pack(pady=10)
         ttk.Button(btn_frame, text="Buscar", command=do_search).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Cancelar", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        
         dialog.transient(self)
         dialog.grab_set()
         self.wait_window(dialog)

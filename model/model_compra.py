@@ -1,46 +1,54 @@
-# Archivo: model/model_compra.py
+# Archivo: model/model_compra.py (VERSIÓN FINAL Y VERIFICADA)
 import os
 import sys
+from mysql.connector import Error
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from conexion import Conexion
-from mysql.connector import Error
 
 class Modelo_compra(Conexion):
     def __init__(self):
         super().__init__()
-        self.con = self.get_conexion()
 
-    def Insert(self, id_cliente, id_inventario, cantidad, fecha, total):
-        cursor = None
-        try:
-            cursor = self.con.cursor()
-            sql = '''
-                INSERT INTO compras (id_cliente, id_inventario, cantidad, fecha, total)
-                VALUES (%s, %s, %s, %s, %s)
-            '''
-            cursor.execute(sql, (id_cliente, id_inventario, cantidad, fecha, total))
-            self.con.commit()
-            return cursor.lastrowid
-        except Error as e:
-            print(f"Error al insertar compra: {e}")
-            return 0
-        finally:
-            if cursor:
-                cursor.close()
+    def insertar_venta_maestra(self, cursor, id_cliente, total_venta):
+        """
+        Inserta un registro en la tabla maestra 'ventas' usando NOW() para la fecha.
+        """
+        sql = "INSERT INTO ventas (id_cliente, fecha_venta, total_venta) VALUES (%s, NOW(), %s)"
+        cursor.execute(sql, (id_cliente, total_venta))
+        return cursor.lastrowid
+
+    def insertar_detalle_venta(self, cursor, id_venta, id_inventario, cantidad, precio_unitario):
+        """
+        Inserta un producto en la tabla 'ventas_detalle'.
+        """
+        sql = "INSERT INTO ventas_detalle (id_venta, id_inventario, cantidad, precio_unitario_venta) VALUES (%s, %s, %s, %s)"
+        cursor.execute(sql, (id_venta, id_inventario, cantidad, precio_unitario))
 
     def Select_all(self):
+        """
+        Obtiene el historial de ítems individuales vendidos desde la nueva estructura de tablas.
+        """
+        con = self.get_conexion()
         cursor = None
         try:
-            cursor = self.con.cursor()
+            cursor = con.cursor(dictionary=True)
             sql = """
                 SELECT 
-                    co.id_compra, cl.cedula, CONCAT(cl.nombre, ' ', cl.apellido) AS nombre_cliente,
-                    inv.producto AS nombre_producto, co.cantidad, co.fecha, co.total,
-                    co.id_cliente, co.id_inventario
-                FROM compras AS co
-                JOIN clientes AS cl ON co.id_cliente = cl.id_cliente
-                JOIN inventario AS inv ON co.id_inventario = inv.id_inventario
-                ORDER BY co.fecha DESC, co.id_compra DESC
+                    v.id_venta,
+                    c.cedula,
+                    CONCAT(c.nombre, ' ', c.apellido) AS nombre_cliente,
+                    i.producto AS nombre_producto,
+                    vd.cantidad,
+                    v.fecha_venta AS fecha,
+                    (vd.cantidad * vd.precio_unitario_venta) AS total_linea,
+                    v.id_cliente,
+                    vd.id_inventario
+                FROM ventas_detalle vd
+                JOIN ventas v ON vd.id_venta = v.id_venta
+                JOIN clientes c ON v.id_cliente = c.id_cliente
+                JOIN inventario i ON vd.id_inventario = i.id_inventario
+                ORDER BY v.fecha_venta DESC, v.id_venta DESC;
             """
             cursor.execute(sql)
             return cursor.fetchall()
@@ -48,78 +56,37 @@ class Modelo_compra(Conexion):
             print(f"Error al seleccionar todas las compras: {e}")
             return []
         finally:
-            if cursor:
-                cursor.close()
-    
-    def Select_por_id_simple(self, id_compra):
-        """Obtiene solo el id_inventario y la cantidad de una compra."""
+            if cursor: cursor.close()
+            if con and con.is_connected(): con.close()
+            
+    def Select_venta_completa_para_factura(self, id_venta):
+        """
+        Obtiene todos los datos de una venta y sus detalles para generar una factura.
+        """
         con = self.get_conexion()
         cursor = None
         try:
-            cursor = con.cursor()
-            sql = "SELECT id_inventario, cantidad FROM compras WHERE id_compra = %s"
-            cursor.execute(sql, (id_compra,))
-            return cursor.fetchone()
+            cursor = con.cursor(dictionary=True)
+            sql_venta = "SELECT * FROM ventas WHERE id_venta = %s"
+            cursor.execute(sql_venta, (id_venta,))
+            datos_venta = cursor.fetchone()
+
+            if not datos_venta:
+                return None, None
+
+            sql_detalles = """
+                SELECT vd.*, i.producto as nombre_producto 
+                FROM ventas_detalle vd
+                JOIN inventario i ON vd.id_inventario = i.id_inventario
+                WHERE vd.id_venta = %s
+            """
+            cursor.execute(sql_detalles, (id_venta,))
+            detalles_venta = cursor.fetchall()
+            
+            return datos_venta, detalles_venta
         except Error as e:
-            print(f"Error en Modelo_compra.Select_por_id_simple: {e}")
-            return None
+            print(f"Error al obtener datos completos de la venta: {e}")
+            return None, None
         finally:
             if cursor: cursor.close()
             if con and con.is_connected(): con.close()
-
-    
-
-    def Update(self, id_compra, id_cliente, id_inventario, cantidad, fecha, total):
-        cursor = None
-        try:
-            cursor = self.con.cursor()
-            sql = '''
-                UPDATE compras
-                SET id_cliente = %s, id_inventario = %s, cantidad = %s, fecha = %s, total = %s
-                WHERE id_compra = %s
-            '''
-            valores = (id_cliente, id_inventario, cantidad, fecha, total, id_compra)
-            cursor.execute(sql, valores)
-            self.con.commit()
-            return cursor.rowcount
-        except Error as e:
-            print(f"Error al actualizar compra: {e}")
-            return 0
-        finally:
-            if cursor:
-                cursor.close()
-
-    def Delete(self, id_compra):
-        cursor = None
-        try:
-            cursor = self.con.cursor()
-            sql = "DELETE FROM compras WHERE id_compra = %s"
-            cursor.execute(sql, (id_compra,))
-            self.con.commit()
-            return cursor.rowcount
-        except Error as e:
-            print(f"Error al eliminar compra: {e}")
-            return 0
-        finally:
-            if cursor:
-                cursor.close()
-
-    def Select_por_id_completo(self, id_compra):
-        cursor = None
-        try:
-            cursor = self.con.cursor(dictionary=True)
-            sql = """
-                SELECT co.*, inv.producto AS nombre_producto
-                FROM compras co
-                JOIN inventario inv ON co.id_inventario = inv.id_inventario
-                WHERE co.id_compra = %s
-            """
-            cursor.execute(sql, (id_compra,))
-            return cursor.fetchone()
-        finally:
-            if cursor: cursor.close()
-
-    def __del__(self):
-        # Este método puede causar problemas si se cierran conexiones prematuramente.
-        # Es mejor manejar la conexión explícitamente.
-        pass

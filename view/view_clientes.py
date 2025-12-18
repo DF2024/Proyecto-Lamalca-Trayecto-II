@@ -279,7 +279,7 @@ class ClienteView(tk.Toplevel):
 
     def _buscar_cliente(self):
         dialog = tk.Toplevel(self)
-        dialog.title("Buscar Cliente")
+        dialog.title("Buscar Cliente por Cédula")
         dialog.geometry("300x120")
         dialog.configure(bg=self.bg_color)
         
@@ -289,27 +289,49 @@ class ClienteView(tk.Toplevel):
         entry_search.focus_set()
 
         def do_search():
-            cedula = entry_search.get().strip()
+            cedula_buscada = entry_search.get().strip()
             dialog.destroy()
-            if not cedula: return
+            if not cedula_buscada:
+                return
+
+            # Buscamos el cliente directamente en el Treeview
+            item_encontrado = None
+            for item in self.tabla.get_children():
+                valores_fila = self.tabla.item(item)['values']
+                # Comparamos la cédula de la fila (índice 3) con la cédula buscada
+                if str(valores_fila[3]) == cedula_buscada:
+                    item_encontrado = item
+                    break
             
-            cliente = self.controlador.obtener_cliente_por_cedula(cedula)
-            if cliente:
-                self._limpiar_entradas()
-                for item in self.tabla.get_children():
-                    if self.tabla.item(item)['values'][3] == cedula:
-                        self.tabla.selection_set(item)
-                        self.tabla.focus(item)
-                        self.tabla.see(item) # Asegura que la fila seleccionada sea visible
-                        break
-                messagebox.showinfo("Cliente Encontrado", f"Se han cargado los datos de {cliente[1]} {cliente[2]}.")
+            if item_encontrado:
+                # Si lo encontramos, lo seleccionamos en la tabla
+                self.tabla.selection_set(item_encontrado)
+                self.tabla.focus(item_encontrado)
+                self.tabla.see(item_encontrado) # Asegura que la fila sea visible
+                
+                # Obtenemos los datos desde los valores de la fila encontrada
+                # Índice 1: Nombre, Índice 2: Apellido
+                valores = self.tabla.item(item_encontrado)['values']
+                nombre_cliente = valores[1]
+                apellido_cliente = valores[2]
+                
+                messagebox.showinfo("Cliente Encontrado", f"Se han cargado los datos de {nombre_cliente} {apellido_cliente}.")
             else:
-                messagebox.showwarning("No Encontrado", f"No se encontró un cliente con la cédula {cedula}.")
+                # Opcional: Si no está en la tabla, consultamos la BD por si la vista no está actualizada
+                cliente_bd = self.controlador.obtener_cliente_por_cedula(cedula_buscada)
+                if cliente_bd:
+                    messagebox.showinfo("Encontrado en BD", f"El cliente con cédula {cedula_buscada} existe. Refrescando la lista para mostrarlo.")
+                    self._cargar_clientes() # Recargamos la tabla
+                    # Podrías volver a llamar a la búsqueda aquí si quieres que se seleccione automáticamente
+                    # self._buscar_cliente() 
+                else:
+                    messagebox.showwarning("No Encontrado", f"No se encontró un cliente con la cédula {cedula_buscada}.")
 
         btn_frame = tk.Frame(dialog, bg=self.bg_color)
         btn_frame.pack(pady=10)
         ttk.Button(btn_frame, text="Buscar", command=do_search).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Cancelar", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        
         dialog.transient(self)
         dialog.grab_set()
         self.wait_window(dialog)

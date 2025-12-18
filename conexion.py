@@ -5,8 +5,8 @@ class Conexion:
     def __init__(self):
         self.__server = 'localhost'
         self.__user = 'root'
-        self.__pass = 'andres'
-        self.__db = "lamalca"
+        self.__pass = ''
+        self.__db = "lamalca_db"
         self.__port = 3306
 
 
