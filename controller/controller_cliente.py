@@ -10,13 +10,6 @@ class Controlador_cliente:
         self.modelo = Modelo_cliente()
 
     def insertar_cliente(self, nombre, apellido, cedula, telefono, direccion, correo):
-        if not nombre or not apellido or not cedula:
-            return False, "Nombre, Apellido y Cédula son obligatorios."
-        if not cedula.isdigit():
-            return False, "La cédula debe contener solo números."
-        if telefono and not telefono.isdigit():
-            return False, "El teléfono debe contener solo números."
-        # Aquí puedes agregar más validaciones si quieres
 
         filas_afectadas = self.modelo.Insert(nombre, apellido, cedula, telefono, direccion, correo)
         if filas_afectadas > 0:
@@ -31,8 +24,7 @@ class Controlador_cliente:
         return self.modelo.Select_all()
 
     def verificar_existencia_cedula(self, cedula):
-        
-        cliente = self.modelo.buscar_por_cedula(cedula)
+        cliente = self.modelo.Select_por_cedula(cedula)
         return cliente is not None
 
     def actualizar_cliente_por_cedula(self, nombre, apellido, cedula, telefono, direccion, correo):

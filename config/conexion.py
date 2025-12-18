@@ -1,13 +1,17 @@
 import psycopg2
+import os
 from psycopg2 import Error
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class Conexion:
     def __init__(self):
-        self.__server = 'localhost'
-        self.__user = 'dandefensor'
-        self.__pass = 'andres123' 
-        self.__db = "lamalca_pg"
-        self.__port = 5432
+        self.__server = os.getenv("DB_HOST", "localhost")
+        self.__user = os.getenv("DB_USER")
+        self.__pass = os.getenv("DB_PASS") 
+        self.__db = os.getenv("DB_NAME")
+        self.__port = os.getenv("DB_PORT", 5432)
 
     def get_conexion(self):
             con = psycopg2.connect(

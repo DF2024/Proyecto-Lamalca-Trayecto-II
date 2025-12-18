@@ -7,7 +7,7 @@ from model.model_compra import Modelo_compra
 from model.model_inventario import Modelo_inventario
 from model.model_cliente import Modelo_cliente
 try:
-    from utilis.generador_factura import GeneradorFactura
+    from utils.generador_factura import GeneradorFactura
 except ImportError:
     GeneradorFactura = None
 
