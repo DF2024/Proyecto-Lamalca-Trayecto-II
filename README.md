@@ -20,21 +20,6 @@ Registro y seguimiento de compras.
 
 Roles de usuario: Administrador y empleado, con acceso diferenciado.
 
-📦 Instalación
-
-Clona el repositorio:
-
-git clone https://github.com/tu-usuario/lamalca.git
-cd lamalca
-
-
-Instala dependencias (si aplica):
-
-pip install psycopg2
-
-
-Configura tu base de datos PostgreSQL y modifica el archivo de conexión con tus credenciales.
-
 Ejecuta la aplicación:
 
 python main.py
