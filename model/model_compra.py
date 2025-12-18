@@ -4,7 +4,7 @@ import sys
 from mysql.connector import Error
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from conexion import Conexion
+from config.conexion import Conexion
 
 class Modelo_compra(Conexion):
     def __init__(self):

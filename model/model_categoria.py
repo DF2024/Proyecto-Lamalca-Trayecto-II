@@ -2,7 +2,7 @@ import os
 import sys
 # Asegura que se pueda encontrar la clase de conexión en el directorio raíz
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from conexion import Conexion
+from config.conexion import Conexion
 from mysql.connector import Error
 
 class Modelo_categoria(Conexion):

@@ -1,4 +1,4 @@
-from conexion import Conexion
+from config.conexion import Conexion
 from mysql.connector import Error
 
 class Modelo_cliente(Conexion):
