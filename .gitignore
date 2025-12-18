@@ -10,6 +10,12 @@ __pycache__/
 # C extensions
 *.so
 
+# Ignorar todo el contenido de la carpeta facturas
+facturas/*
+
+# Excepción: ¡NO ignorar el archivo .gitkeep!
+!facturas/.gitkeep
+
 # Distribution / packaging
 .Python
 build/
