@@ -1,5 +1,5 @@
 from config.conexion import Conexion
-from mysql.connector import Error
+import psycopg2.extras
 
 class Modelo_cliente(Conexion):
     def __init__(self):
@@ -28,16 +28,31 @@ class Modelo_cliente(Conexion):
     def Select_por_cedula(self, cedula):
         cursor = None
         try:
-            cursor = self.con.cursor()
+            cursor = self.con.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
             sql = "SELECT * FROM clientes WHERE cedula = %s LIMIT 1"
             cursor.execute(sql, (cedula,))
             return cursor.fetchone()
-        except Error as e:
+        except Exception as e:
             print(f"Error en Modelo_cliente.Select_por_cedula: {e}")
             return None
         finally:
             if cursor:
                 cursor.close()
+
+    def Select_por_id(self, id_cliente):
+        cursor = None
+        try:
+            cursor = self.con.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            sql = "SELECT * FROM clientes WHERE id_cliente = %s LIMIT 1"
+            cursor.execute(sql, (id_cliente,))
+            return cursor.fetchone()
+        except Exception as e:
+            print(f"Error en Modelo_cliente.Select_id: {e}")
+            return None
+        finally:
+            if cursor:
+                cursor.close()
+
 
     def existe_cedula(self, cedula: str) -> bool:
         sql = "SELECT 1 FROM clientes WHERE cedula = %s LIMIT 1"
@@ -52,11 +67,11 @@ class Modelo_cliente(Conexion):
     def Select_all(self):
         cursor = None
         try:
-            cursor = self.con.cursor()
+            cursor = self.con.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
             sql = "SELECT * FROM clientes"
             cursor.execute(sql)
             return cursor.fetchall()
-        except Error as e:
+        except Exception as e:
             print(f"Error en Modelo_cliente.Select_all: {e}")
             return []
         finally:
@@ -76,7 +91,7 @@ class Modelo_cliente(Conexion):
             cursor.execute(sql, (nombre, apellido, telefono, direccion, correo, cedula))
             self.con.commit()
             return cursor.rowcount
-        except Error as e:
+        except Exception as e:
             print(f"Error en Modelo_cliente.Update_por_cedula: {e}")
             return 0
         finally:
@@ -91,7 +106,7 @@ class Modelo_cliente(Conexion):
             cursor.execute(sql, (cedula,))
             self.con.commit()
             return cursor.rowcount
-        except Error as e:
+        except Exception as e:
             print(f"Error en Modelo_cliente.Delete_por_cedula: {e}")
             return 0
         finally:

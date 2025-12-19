@@ -147,8 +147,9 @@ class CompraView(tk.Toplevel):
         if not self.carrito:
             return messagebox.showerror("Carrito Vacío", "Debe añadir al menos un producto al carrito.")
 
-        id_nueva_compra = self.controlador_compra.registrar_venta_completa(
-            id_cliente=self.id_cliente_seleccionado, items_carrito=self.carrito
+        id_nueva_compra = self.controlador_compra.registrar_compra_completa(
+            id_cliente=self.id_cliente_seleccionado, 
+            items_carrito=self.carrito
         )
 
         if id_nueva_compra:
@@ -161,8 +162,8 @@ class CompraView(tk.Toplevel):
         else:
             messagebox.showerror("Error de Base de Datos", "No se pudo registrar la venta.")
             
-    def _generar_y_abrir_factura(self, id_venta):
-        path_pdf, mensaje = self.controlador_compra.generar_factura_venta(id_venta)
+    def _generar_y_abrir_factura(self, id_compra):
+        path_pdf, mensaje = self.controlador_compra.generar_factura_compra(id_compra)
         if path_pdf:
             messagebox.showinfo("Factura Generada", f"{mensaje}\nEl archivo se guardó en: {path_pdf}")
             try: webbrowser.open(os.path.realpath(path_pdf))
@@ -242,7 +243,15 @@ class CompraView(tk.Toplevel):
         if compras:
             for i, compra in enumerate(compras):
                 fecha_formateada = compra['fecha'].strftime('%Y-%m-%d %H:%M')
-                valores_tupla = (compra['id_venta'], compra['cedula'], compra['nombre_cliente'], compra['nombre_producto'], compra['cantidad'], fecha_formateada, f"{float(compra['total_linea']):.2f}")
+                valores_tupla = (
+                    compra['id_compra'], 
+                    compra['cedula'], 
+                    compra['nombre_cliente'], 
+                    compra['nombre_producto'], 
+                    compra['cantidad'], 
+                    fecha_formateada, 
+                    f"{float(compra['total_linea']):.2f}"
+                    )
                 tag = 'evenrow' if i % 2 == 0 else 'oddrow'
                 self.tabla_compras.insert("", "end", values=valores_tupla, tags=(tag,))
         self.tabla_compras.tag_configure('evenrow', background=self.bg_color)
@@ -253,8 +262,10 @@ class CompraView(tk.Toplevel):
         if not cedula: return
         cliente = self.controlador_cliente.obtener_cliente_por_cedula(cedula)
         if cliente:
-            self.id_cliente_seleccionado = cliente[0]
-            self.label_nombre_cliente.config(text=f"{cliente[1]} {cliente[2]}", foreground="#4CAF50")
+            self.id_cliente_seleccionado = cliente['id_cliente']
+            self.label_nombre_cliente.config(
+                text=f"{cliente['nombre']} {cliente['apellido']}", foreground="#4CAF50"
+                )
         else:
             self.id_cliente_seleccionado = None
             self.label_nombre_cliente.config(text="Cliente no encontrado.", foreground="#F44336")

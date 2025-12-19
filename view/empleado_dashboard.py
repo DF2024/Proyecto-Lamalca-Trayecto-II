@@ -26,7 +26,7 @@ class EmpleadoDashboard(ctk.CTkToplevel):
         self.geometry("900x500") # Un poco más corto ya que tiene menos opciones
         self.resizable(False, False)
         
-        self.after(200, lambda: self.eval('tk::PlaceWindow . center'))
+        self.after(200, lambda: self.entry.get('tk::PlaceWindow . center'))
 
         # --- Tema Oscuro ---
         ctk.set_appearance_mode("dark")

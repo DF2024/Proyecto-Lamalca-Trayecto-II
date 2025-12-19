@@ -18,7 +18,7 @@ class GeneradorFactura:
         
         # El ID ahora viene de 'id_venta'
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.nombre_archivo = f"factura_{self.datos_venta['id_venta']}_{timestamp}.pdf"
+        self.nombre_archivo = f"factura_{self.datos_venta['id_compra']}_{timestamp}.pdf"
         
         self._calcular_impuestos()
 
@@ -53,7 +53,7 @@ class GeneradorFactura:
         c.drawRightString(x_derecha, y_actual, "FACTURA")
         c.setFont("Helvetica", 10)
         # Usamos el id_venta del diccionario
-        c.drawRightString(x_derecha, y_actual - 0.20 * inch, f"N°: {self.datos_venta['id_venta']:06d}")
+        c.drawRightString(x_derecha, y_actual - 0.20 * inch, f"N°: {self.datos_venta['id_compra']:06d}")
         c.drawRightString(x_derecha, y_actual - 0.35 * inch, f"Fecha: {self.datos_venta['fecha']}")
         
         y_actual -= inch
@@ -85,7 +85,7 @@ class GeneradorFactura:
         # Iteramos sobre la lista de items que nos pasa el controlador
         for item in self.datos_venta['items']:
             cantidad = Decimal(item['cantidad'])
-            precio_unitario = Decimal(item['precio_unitario_venta'])
+            precio_unitario = Decimal(item['precio_unitario'])
             subtotal_item = cantidad * precio_unitario
 
             # Desglosamos el IVA por línea para mostrar el precio unitario base

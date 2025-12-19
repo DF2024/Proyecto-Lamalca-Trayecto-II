@@ -52,6 +52,7 @@ class InventarioView(tk.Toplevel):
         self.controlador_categoria = Controlador_categoria()
         self.controlador_proveedor = Controlador_proveedor()
 
+
         # Datos internos
         self.categorias_map = {}
         self.proveedores_map = {}
@@ -333,7 +334,7 @@ class InventarioView(tk.Toplevel):
             return
         
         if messagebox.askyesno("Confirmar Eliminación", f"¿Está seguro de eliminar el producto ID {self.id_seleccionado}?\nEsta acción es irreversible.", icon='warning'):
-            resultado = self.controlador_inventario.eliminar_inventario(self.id_seleccionado)
+            resultado = self.controlador_inventario.eliminar_producto(self.id_seleccionado)
             if resultado:
                 messagebox.showinfo("Éxito", "Producto eliminado exitosamente.")
                 self._cargar_inventario()

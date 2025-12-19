@@ -148,10 +148,15 @@ class ClienteView(tk.Toplevel):
         self.tabla = ttk.Treeview(frame_tabla, columns=columnas, show="headings")
         
         for col in columnas:
-            self.tabla.heading(col, text=col)
-            if col == "ID": self.tabla.column(col, width=40, anchor="center")
-            elif col == "Dirección": self.tabla.column(col, width=250)
-            else: self.tabla.column(col, width=120)
+            self.tabla.heading(col, text=col, anchor="center")
+
+            if col == "ID":
+                self.tabla.column(col, width=40, anchor="center")
+            elif col == "Dirección":
+                self.tabla.column(col, width=250, anchor="center")
+            else:
+                self.tabla.column(col, width=120, anchor="center")
+
         
         self.tabla.pack(side="left", fill="both", expand=True)
         scrollbar = ttk.Scrollbar(frame_tabla, orient="vertical", command=self.tabla.yview)
@@ -172,6 +177,17 @@ class ClienteView(tk.Toplevel):
             "correo": self.e_correo.get().strip(), 
         }
     
+    def _cliente_dict_a_fila(self, cliente: dict):
+        return (
+            cliente['id_cliente'],
+            cliente['nombre'],
+            cliente['apellido'],
+            cliente['cedula'],
+            cliente['telefono'],
+            cliente['correo'],
+            cliente['direccion']
+        )
+
     # PARA MOSTRAR LOS TIPOS DE MENSAJES 
     def _mostrar_mensaje(self, tipo, mensaje):
         if tipo == "info":
@@ -202,7 +218,8 @@ class ClienteView(tk.Toplevel):
             if clientes:
                 for i, c in enumerate(clientes):
                     tag = 'evenrow' if i % 2 == 0 else 'oddrow'
-                    self.tabla.insert("", tk.END, values=c, tags=(tag,))
+                    fila = self._cliente_dict_a_fila(c)
+                    self.tabla.insert("", tk.END, values=fila, tags=(tag,))
             # Colores de filas alternados para tema oscuro
             self.tabla.tag_configure('evenrow', background="#2e2e2e", foreground="#dcdcdc")
             self.tabla.tag_configure('oddrow', background="#3c3c3c", foreground="#dcdcdc")

@@ -1,92 +1,97 @@
-# Archivo: model/model_compra.py (VERSIÓN FINAL Y VERIFICADA)
+# Archivo: model/model_compra.py
 import os
 import sys
-from mysql.connector import Error
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from config.conexion import Conexion
 
+
 class Modelo_compra(Conexion):
-    def __init__(self):
-        super().__init__()
 
-    def insertar_venta_maestra(self, cursor, id_cliente, total_venta):
+    def insertar_compra_maestra(self, cursor, id_cliente, total_compra):
         """
-        Inserta un registro en la tabla maestra 'ventas' usando NOW() para la fecha.
+        Inserta una compra en la tabla compras y retorna su id.
         """
-        sql = "INSERT INTO ventas (id_cliente, fecha_venta, total_venta) VALUES (%s, NOW(), %s)"
-        cursor.execute(sql, (id_cliente, total_venta))
-        return cursor.lastrowid
+        sql = """
+            INSERT INTO compras (id_cliente, fecha, total)
+            VALUES (%s, NOW(), %s)
+            RETURNING id_compra;
+        """
+        cursor.execute(sql, (id_cliente, total_compra))
+        return cursor.fetchone()[0]
 
-    def insertar_detalle_venta(self, cursor, id_venta, id_inventario, cantidad, precio_unitario):
+    def insertar_detalle_compra(self, cursor, id_compra, id_inventario, cantidad, precio_unitario):
         """
-        Inserta un producto en la tabla 'ventas_detalle'.
+        Inserta el detalle de una compra.
         """
-        sql = "INSERT INTO ventas_detalle (id_venta, id_inventario, cantidad, precio_unitario_venta) VALUES (%s, %s, %s, %s)"
-        cursor.execute(sql, (id_venta, id_inventario, cantidad, precio_unitario))
+        sql = """
+            INSERT INTO compras_detalle (
+                id_compra, id_inventario, cantidad, precio_unitario
+            )
+            VALUES (%s, %s, %s, %s);
+        """
+        cursor.execute(sql, (id_compra, id_inventario, cantidad, precio_unitario))
 
     def Select_all(self):
         """
-        Obtiene el historial de ítems individuales vendidos desde la nueva estructura de tablas.
+        Obtiene el historial completo de compras con sus productos.
         """
         con = self.get_conexion()
         cursor = None
         try:
-            cursor = con.cursor(dictionary=True)
+            cursor = con.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
             sql = """
                 SELECT 
-                    v.id_venta,
+                    cp.id_compra,
                     c.cedula,
                     CONCAT(c.nombre, ' ', c.apellido) AS nombre_cliente,
                     i.producto AS nombre_producto,
-                    vd.cantidad,
-                    v.fecha_venta AS fecha,
-                    (vd.cantidad * vd.precio_unitario_venta) AS total_linea,
-                    v.id_cliente,
-                    vd.id_inventario
-                FROM ventas_detalle vd
-                JOIN ventas v ON vd.id_venta = v.id_venta
-                JOIN clientes c ON v.id_cliente = c.id_cliente
-                JOIN inventario i ON vd.id_inventario = i.id_inventario
-                ORDER BY v.fecha_venta DESC, v.id_venta DESC;
+                    cd.cantidad,
+                    cp.fecha AS fecha,
+                    (cd.cantidad * cd.precio_unitario) AS total_linea
+                FROM compras_detalle cd
+                JOIN compras cp ON cd.id_compra = cp.id_compra
+                JOIN clientes c ON cp.id_cliente = c.id_cliente
+                JOIN inventario i ON cd.id_inventario = i.id_inventario
+                ORDER BY cp.fecha DESC, cp.id_compra DESC;
             """
             cursor.execute(sql)
             return cursor.fetchall()
-        except Error as e:
-            print(f"Error al seleccionar todas las compras: {e}")
+
+        except psycopg2.Error as e:
+            print(f"Error al seleccionar compras: {e}")
             return []
+
         finally:
-            if cursor: cursor.close()
-            if con and con.is_connected(): con.close()
-            
-    def Select_venta_completa_para_factura(self, id_venta):
-        """
-        Obtiene todos los datos de una venta y sus detalles para generar una factura.
-        """
+            if cursor:
+                cursor.close()
+            if con:
+                con.close()
+
+    def Select_compra_completa_para_factura(self, id_compra):
         con = self.get_conexion()
         cursor = None
         try:
-            cursor = con.cursor(dictionary=True)
-            sql_venta = "SELECT * FROM ventas WHERE id_venta = %s"
-            cursor.execute(sql_venta, (id_venta,))
-            datos_venta = cursor.fetchone()
-
-            if not datos_venta:
+            cursor = con.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            cursor.execute("SELECT * FROM compras WHERE id_compra = %s", (id_compra,))
+            datos_compra = cursor.fetchone()
+            if not datos_compra:
                 return None, None
-
             sql_detalles = """
-                SELECT vd.*, i.producto as nombre_producto 
-                FROM ventas_detalle vd
-                JOIN inventario i ON vd.id_inventario = i.id_inventario
-                WHERE vd.id_venta = %s
+                SELECT cd.*, i.producto AS nombre_producto
+                FROM compras_detalle cd
+                JOIN inventario i ON cd.id_inventario = i.id_inventario
+                WHERE cd.id_compra = %s
             """
-            cursor.execute(sql_detalles, (id_venta,))
-            detalles_venta = cursor.fetchall()
-            
-            return datos_venta, detalles_venta
-        except Error as e:
-            print(f"Error al obtener datos completos de la venta: {e}")
+            cursor.execute(sql_detalles, (id_compra,))
+            detalles_compra = cursor.fetchall()
+            return datos_compra, detalles_compra
+        except Exception as e:
+            print(f"Error al obtener datos completos de la compra: {e}")
             return None, None
         finally:
             if cursor: cursor.close()
-            if con and con.is_connected(): con.close()
+            if con: con.close()
