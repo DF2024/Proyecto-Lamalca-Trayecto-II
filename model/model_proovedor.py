@@ -3,7 +3,7 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from config.conexion import Conexion
-from mysql.connector import Error
+
 
 class Modelo_proveedor(Conexion):
     def __init__(self):
@@ -22,7 +22,7 @@ class Modelo_proveedor(Conexion):
             cursor.execute(sql, valores)
             self.con.commit()
             return cursor.rowcount
-        except Error as e:
+        except Exception as e:
             print(f"Error al insertar proveedor: {e}")
             return 0
         finally:
@@ -36,7 +36,7 @@ class Modelo_proveedor(Conexion):
             sql = "SELECT id_proveedor, rif, nombre, telefono, direccion FROM proveedores ORDER BY nombre"
             cursor.execute(sql)
             return cursor.fetchall()
-        except Error as e:
+        except Exception as e:
             print(f"Error al seleccionar todos los proveedores: {e}")
             return []
         finally:
@@ -50,7 +50,7 @@ class Modelo_proveedor(Conexion):
             sql = "SELECT rif FROM proveedores WHERE rif = %s LIMIT 1" # Solo necesitamos una columna para ser más eficientes
             cursor.execute(sql, (rif,))
             return cursor.fetchone()
-        except Error as e:
+        except Exception as e:
             print(f"Error al buscar proveedor por RIF: {e}")
             return None
         finally:
@@ -70,7 +70,7 @@ class Modelo_proveedor(Conexion):
             cursor.execute(sql, valores)
             self.con.commit()
             return cursor.rowcount
-        except Error as e:
+        except Exception as e:
             print(f"Error al actualizar proveedor: {e}")
             return 0
         finally:
@@ -85,7 +85,7 @@ class Modelo_proveedor(Conexion):
             cursor.execute(sql, (rif,))
             self.con.commit()
             return cursor.rowcount
-        except Error as e:
+        except Exception as e:
             print(f"Error al eliminar proveedor: {e}")
             return 0
         finally:
@@ -93,5 +93,5 @@ class Modelo_proveedor(Conexion):
                 cursor.close()
             
     def __del__(self):
-        if self.con and self.con.is_connected():
+        if self.con:
             self.con.close()

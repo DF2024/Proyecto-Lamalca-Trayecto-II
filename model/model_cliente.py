@@ -17,7 +17,7 @@ class Modelo_cliente(Conexion):
             cursor.execute(sql, (nombre, apellido, cedula, telefono, direccion, correo))
             self.con.commit()
             return cursor.rowcount
-        except Error as e:
+        except Exception as e:
             print(f"Error en Modelo_cliente.Insert: {e}")
             return 0 # Devuelve 0 para indicar que no se insertaron filas
         finally:
