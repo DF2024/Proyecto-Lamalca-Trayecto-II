@@ -39,7 +39,16 @@ class Modelo_cliente(Conexion):
             if cursor:
                 cursor.close()
 
-    
+    def existe_cedula(self, cedula: str) -> bool:
+        sql = "SELECT 1 FROM clientes WHERE cedula = %s LIMIT 1"
+        cursor = self.con.cursor()
+        cursor.execute(sql, (cedula,))
+        resultado = cursor.fetchone()
+        cursor.close()
+        return resultado is not None
+
+
+
     def Select_all(self):
         cursor = None
         try:

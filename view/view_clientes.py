@@ -161,6 +161,39 @@ class ClienteView(tk.Toplevel):
 
         ttk.Button(main_frame, text="Volver al Menú Principal", image=self.iconos.get('menu'), compound=tk.LEFT, command=self.volver_al_dashboard).pack(pady=(10,0))
 
+    # FUNCION PARA OBTENER LOS DATOS QUE SE NECESITAN EN LA BASE DE DATOS
+    def _obtener_datos(self):
+        return {
+            "nombre": self.e_nombre.get().strip(),
+            "apellido": self.e_apellido.get().strip(),
+            "cedula": self.e_cedula.get().strip(),
+            "telefono": self.e_telefono.get().strip(),
+            "direccion": self.e_direccion.get().strip(),
+            "correo": self.e_correo.get().strip(), 
+        }
+    
+    # PARA MOSTRAR LOS TIPOS DE MENSAJES 
+    def _mostrar_mensaje(self, tipo, mensaje):
+        if tipo == "info":
+            messagebox.showinfo("Info", mensaje)
+        elif tipo == "error":
+            messagebox.showerror("Error", mensaje)
+        elif tipo == "warning":
+            messagebox.showwarning("Atención", mensaje)
+
+    # PARA EJECUTAR UNA ACCIÓN Y EVITAR REPETIR CODIGO
+    def _ejecutar_acción(self, accion, exito_msg, error_msg):
+        data = self._obtener_datos()
+        ok, mensajes = accion(data)
+
+        if not ok:
+            self._mostrar_mensaje("error", "\n".join(mensajes or [error_msg]))
+            return
+        
+        self._mostrar_mensaje("info", exito_msg)
+        self._cargar_clientes()
+        self._limpiar_entradas()
+
     def _cargar_clientes(self):
         for i in self.tabla.get_children():
             self.tabla.delete(i)
@@ -174,11 +207,7 @@ class ClienteView(tk.Toplevel):
             self.tabla.tag_configure('evenrow', background="#2e2e2e", foreground="#dcdcdc")
             self.tabla.tag_configure('oddrow', background="#3c3c3c", foreground="#dcdcdc")
         except Exception as e:
-            messagebox.showerror("Error de Carga", f"Error al cargar los clientes: {e}")
-    
-    # El resto de las funciones (_seleccionar_fila, _limpiar_entradas, _validar_entradas, etc.)
-    # no necesitan cambios de color porque usan los estilos ttk que ya hemos configurado.
-    # Las pego aquí para que tengas el código completo.
+            self._mostrar_mensaje("error", f"Error al cargar los clientes: {e}")
     
     def _seleccionar_fila(self, event):
         item_seleccionado = self.tabla.focus()
@@ -200,82 +229,24 @@ class ClienteView(tk.Toplevel):
     def _limpiar_entradas(self):
         self.e_cedula.config(state="normal")
         self.id_seleccionado = None
-        for entry in [self.e_nombre, self.e_apellido, self.e_cedula, self.e_telefono, self.e_direccion, self.e_correo]:
+        for entry in [
+            self.e_nombre, 
+            self.e_apellido, 
+            self.e_cedula, 
+            self.e_telefono, 
+            self.e_direccion, 
+            self.e_correo
+            ]:
             entry.delete(0, tk.END)
         
         if self.tabla.selection():
             self.tabla.selection_remove(self.tabla.selection()[0])
 
-    def _validar_entradas(self):
-        nombre = self.e_nombre.get().strip()
-        apellido = self.e_apellido.get().strip()
-        cedula = self.e_cedula.get().strip()
-        telefono = self.e_telefono.get().strip()
-        correo = self.e_correo.get().strip()
-        
-        if not all([nombre, apellido, cedula]):
-            messagebox.showwarning("Campos Requeridos", "Nombre, Apellido y Cédula son obligatorios.")
-            return None
-        
-        if not cedula.isdigit() or len(cedula) < 6:
-            messagebox.showwarning("Dato Inválido", "La cédula debe contener solo números y tener al menos 6 dígitos.")
-            return None
-            
-        if telefono and not telefono.isdigit():
-            messagebox.showwarning("Dato Inválido", "El teléfono debe contener solo números.")
-            return None
-
-        if correo and not re.match(r"[^@]+@[^@]+\.[^@]+", correo):
-            messagebox.showwarning("Correo Inválido", "Por favor, ingrese una dirección de correo válida.")
-            return None
-        return True
-
     def _agregar_cliente(self):
-        if not self._validar_entradas():
-            return
-            
-        cedula = self.e_cedula.get().strip()
-        
-        if self.controlador.verificar_existencia_cedula(cedula):
-            messagebox.showerror("Error de Duplicado", f"La cédula '{cedula}' ya se encuentra registrada.")
-            return
-        
-        nombre = self.e_nombre.get().strip()
-        apellido = self.e_apellido.get().strip()
-        telefono = self.e_telefono.get().strip()
-        direccion = self.e_direccion.get().strip()
-        correo = self.e_correo.get().strip()
-
-        resultado = self.controlador.insertar_cliente(nombre, apellido, cedula, telefono, direccion, correo)
-        if resultado:
-            messagebox.showinfo("Éxito", "Cliente agregado exitosamente.")
-            self._cargar_clientes()
-            self._limpiar_entradas()
-        else:
-            messagebox.showerror("Error de Base de Datos", "No se pudo agregar el cliente.")
+        self._ejecutar_acción(self.controlador.insertar_cliente, "Cliente agregado exitosamente", "Error al agregar cliente")
 
     def _actualizar_cliente(self):
-        if self.id_seleccionado is None:
-            messagebox.showwarning("Acción Requerida", "Debe seleccionar un cliente de la lista para actualizar.")
-            return
-            
-        if not self._validar_entradas():
-            return
-
-        nombre = self.e_nombre.get().strip()
-        apellido = self.e_apellido.get().strip()
-        cedula = self.e_cedula.get().strip()
-        telefono = self.e_telefono.get().strip()
-        direccion = self.e_direccion.get().strip()
-        correo = self.e_correo.get().strip()
-
-        resultado = self.controlador.actualizar_cliente_por_cedula(nombre, apellido, cedula, telefono, direccion, correo)
-        if resultado:
-            messagebox.showinfo("Éxito", "Cliente actualizado exitosamente.")
-            self._cargar_clientes()
-            self._limpiar_entradas()
-        else:
-            messagebox.showerror("Error de Base de Datos", "No se pudo actualizar el cliente.")
+        self._ejecutar_acción(self.controlador.actualizar_cliente, "Cliente actualizado exitosamente", "Error al actualizar cliente")
 
     def _buscar_cliente(self):
         dialog = tk.Toplevel(self)
@@ -315,17 +286,18 @@ class ClienteView(tk.Toplevel):
                 nombre_cliente = valores[1]
                 apellido_cliente = valores[2]
                 
-                messagebox.showinfo("Cliente Encontrado", f"Se han cargado los datos de {nombre_cliente} {apellido_cliente}.")
+                self._mostrar_mensaje("info", f"Se han cargado los datos de {nombre_cliente} {apellido_cliente}.")
+
             else:
                 # Opcional: Si no está en la tabla, consultamos la BD por si la vista no está actualizada
                 cliente_bd = self.controlador.obtener_cliente_por_cedula(cedula_buscada)
                 if cliente_bd:
-                    messagebox.showinfo("Encontrado en BD", f"El cliente con cédula {cedula_buscada} existe. Refrescando la lista para mostrarlo.")
+                    self._mostrar_mensaje("info", f"El cliente con cédula {cedula_buscada} existe. Refrescando la lista para mostrarlo.")
                     self._cargar_clientes() # Recargamos la tabla
                     # Podrías volver a llamar a la búsqueda aquí si quieres que se seleccione automáticamente
                     # self._buscar_cliente() 
                 else:
-                    messagebox.showwarning("No Encontrado", f"No se encontró un cliente con la cédula {cedula_buscada}.")
+                    self._mostrar_mensaje("warning", f"No se encontró un cliente con la cédula {cedula_buscada}.")
 
         btn_frame = tk.Frame(dialog, bg=self.bg_color)
         btn_frame.pack(pady=10)
@@ -338,18 +310,18 @@ class ClienteView(tk.Toplevel):
     
     def _eliminar_cliente(self):
         if self.id_seleccionado is None:
-            messagebox.showwarning("Acción Requerida", "Debe seleccionar un cliente de la lista para eliminar.")
+            self._mostrar_mensaje("warning", "Debe seleccionar un cliente de la lista para eliminar.")
             return
         
         cedula = self.e_cedula.get().strip()
         if messagebox.askyesno("Confirmar Eliminación", f"¿Está seguro de eliminar al cliente con cédula {cedula}?\nEsta acción no se puede deshacer.", icon='warning'):
             resultado = self.controlador.eliminar_cliente_por_cedula(cedula)
             if resultado:
-                messagebox.showinfo("Éxito", "Cliente eliminado exitosamente.")
+                self._mostrar_mensaje("info", "Cliente eliminado exitosamente.")
                 self._cargar_clientes()
                 self._limpiar_entradas()
             else:
-                messagebox.showerror("Error", "No se pudo eliminar el cliente.\nEs posible que esté asociado a una venta.")
+                self._mostrar_mensaje("error", "No se pudo eliminar el cliente.\nEs posible que esté asociado a una venta.")
     
     def volver_al_dashboard(self):
         self.destroy()
