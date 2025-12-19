@@ -98,7 +98,7 @@ class GeneradorFactura:
             c.drawRightString(x_derecha, y_actual, f"{subtotal_base:.2f}")
             
             y_actual -= 0.25 * inch # Movemos la coordenada Y para el siguiente producto
-
+                                
         # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< FIN DEL CAMBIO CLAVE >>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
         y_actual -= 0.5 * inch

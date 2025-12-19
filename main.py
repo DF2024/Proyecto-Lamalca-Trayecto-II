@@ -4,6 +4,9 @@ from tkinter import messagebox
 import customtkinter as ctk
 import os
 import sys
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # --- Dependencia para iconos ---
 try:
@@ -132,8 +135,14 @@ class LoginWindow(ctk.CTk):
             return
 
         usuarios = {
-            "admin": {"password": "123", "rol": "admin"},
-            "empleado": {"password": "456", "rol": "empleado"}
+            "admin": {
+                "password": os.getenv("ADMIN_PASS"), 
+                "rol": os.getenv("ADMIN")
+                },
+            "empleado": {
+                "password": os.getenv("EMPLE_PASS"), 
+                "rol": os.getenv("EMPLE")
+                }
         }
 
         if usuario in usuarios and usuarios[usuario]["password"] == password:
